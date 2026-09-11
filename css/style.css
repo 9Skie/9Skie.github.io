@@ -21,7 +21,7 @@
   --grey:    #8c8c8c;
 
   --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
-  --pixel: "Pixelify Sans", var(--mono);
+  --pixel: "Silkscreen", var(--mono);
 
   --maxw: 864px;
   --shadow: 4px 4px 0 var(--line-2);
@@ -67,6 +67,25 @@ body::after {
 .dot { color: var(--ink); }
 
 /* =========================================================================
+   night mode (20:00–07:00): inverted greyscale, same hard edges
+   ========================================================================= */
+body.night {
+  --paper:   #161616;
+  --paper-2: #232323;
+  --panel:   #0b0b0b;
+  --block:   #393939;
+
+  --line:    #3f3f3f;
+  --line-2:  #626262;
+  --line-3:  #909090;
+
+  --ink:     #e4e4e4;
+  --ink-dim: #a9a9a9;
+  --grey:    #737373;
+}
+body.night .hud { background: rgba(11,11,11,.94); }
+
+/* =========================================================================
    HUD bars (fixed top / bottom)
    ========================================================================= */
 .hud {
@@ -84,6 +103,14 @@ body::after {
 }
 .hud__c { color: var(--ink); position: absolute; left: 50%; transform: translateX(-50%); }
 .hud__r { color: var(--ink); }
+.hud__toggle {
+  width: 22px; height: 22px; padding: 0; vertical-align: middle;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line-2); background: transparent; color: var(--ink);
+  cursor: pointer; transition: border-color .12s;
+}
+.hud__toggle:hover { border-color: var(--ink); }
+.hud__toggle svg { display: block; }
 
 /* =========================================================================
    menu shell
@@ -105,9 +132,10 @@ body::after {
   margin: 0;
   font-family: var(--pixel);
   font-weight: 400;
-  font-size: clamp(40px, 11vw, 96px);
+  font-size: clamp(40px, 10vw, 88px);
   line-height: 1;
   letter-spacing: 2px;
+  white-space: nowrap;
   color: var(--ink);
 }
 
@@ -174,7 +202,8 @@ body::after {
 }
 .tile:hover { border-color: var(--ink); color: var(--ink); transform: translateY(-2px); box-shadow: var(--shadow); }
 .tile.is-active { border-color: var(--ink); color: var(--ink); background: var(--block); box-shadow: var(--shadow); }
-.tile__ico { font-family: var(--mono); font-size: 32px; line-height: 1; color: var(--ink); }
+.tile__ico { font-family: var(--mono); font-size: 32px; line-height: 1; color: var(--ink); height: 32px; display: flex; align-items: center; }
+.tile__ico svg { display: block; }
 .tile__lbl { font-family: var(--pixel); font-size: 24px; letter-spacing: 1px; }
 .tile__sub { font-size: 16px; color: var(--grey); letter-spacing: .5px; }
 
@@ -242,6 +271,9 @@ body::after {
 .entry { position: relative; padding-left: 40px; padding-bottom: 16px; }
 .entry:last-child { padding-bottom: 0; }
 .entry.is-hidden { display: none; }
+/* staccato entrance: snaps in from the block-shadow offset, hard 2-frame timing */
+@keyframes entry-in { 0% { opacity: 0; transform: translate(4px, 4px); } 100% { opacity: 1; transform: none; } }
+.entry.is-entering { animation: entry-in .16s steps(2) both; }
 .rail-dot {
   position: absolute; left: 16px; top: 8px; transform: translateX(-50%);
   width: 8px; height: 8px; border-radius: 50%;
@@ -305,11 +337,24 @@ body::after {
    ========================================================================= */
 @media (max-width: 720px) {
   .menu { padding: 72px 16px 72px; gap: 24px; }
+
+  /* HUD: drop the center status + long suffix so nothing collides */
   .hud { padding: 8px 16px; font-size: 16px; gap: 8px; }
   .hud__l, .hud__r { max-width: 42%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hud--top .hud__c { display: none; }
+
   .middle { grid-template-columns: 1fr; }
-  .slot__inner { max-width: 160px; }
-  .tile { min-width: 0; }
+  .middle--mirror .slot { order: -1; }  /* pfp above the bio on mobile */
+  .slot__inner { max-width: 160px; margin: 0 auto; }
+
+  /* stream tiles: full-width rows = big tap targets */
+  .select__list { flex-direction: column; }
+  .tile { min-width: 0; flex-direction: row; justify-content: center; padding: 16px; gap: 16px; }
+
+  /* cards: stack cover over the count, count becomes a horizontal strip */
+  .card__top { flex-direction: column; }
+  .card__front { flex: none; width: 100%; }
+  .card__count { flex-direction: row; gap: 12px; padding: 12px 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

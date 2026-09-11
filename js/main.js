@@ -11,11 +11,15 @@
   'use strict';
 
   const METRIC = {
-    stars:     { glyph: '✰', label: 'stars' },
-    likes:     { glyph: 'ദ്ദി', label: 'likes' },
-    views:     { glyph: '𓁹', label: 'views' },
+    stars:     { glyph: '<svg width="18" height="18" viewBox="0 0 9 9" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M4 0h1v1H4zM3 1h3v1H3zM3 2h3v1H3zM0 3h9v1H0zM1 4h7v1H1zM2 5h5v1H2zM2 6h2v1H2zM5 6h2v1H5zM1 7h2v1H1zM6 7h2v1H6zM1 8h1v1H1zM7 8h1v1H7z"/></svg>', label: 'stars' },
+    likes:     { glyph: '<svg width="21" height="18" viewBox="0 0 7 6" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M1 0h2v1H1zM4 0h2v1H4zM0 1h7v1H0zM0 2h7v1H0zM1 3h5v1H1zM2 4h3v1H2zM3 5h1v1H3z"/></svg>', label: 'likes' },
+    views:     { glyph: '<svg width="26" height="18" viewBox="0 0 13 9" shape-rendering="crispEdges" fill="currentColor" fill-rule="evenodd" aria-hidden="true"><path d="M4 0h5v1h2v1h1v1h1v3h-1v1h-1v1h-2v1H4V8H2V7H1V6H0V3h1V2h1V1h2V0zm2 2h1v1h1v3H7v1H6V6H5V3h1V2z"/></svg>', label: 'views' },
   };
-  const ICON = { cs: '&lt;/&gt;', art: 'ᝰ', video: '▶' };
+  const ICON = {
+    cs:    '<svg width="36" height="24" viewBox="0 0 12 8" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M0 0h12v1H0zM0 7h12v1H0zM0 1h1v6H0zM11 1h1v6h-1zM2 2h2v1H2zM4 3h1v1H4zM2 4h2v1H2zM3 5h4v1H3z"/></svg>',
+    art:   '<svg width="30" height="30" viewBox="0 0 10 10" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M7 0h2v1H7zM6 1h2v1H6zM5 2h2v1H5zM4 3h2v1H4zM3 4h2v1H3zM2 5h2v1H2zM1 6h2v1H1zM0 7h3v1H0zM0 8h2v1H0zM0 9h1v1H0z"/></svg>',
+    video: '<svg width="15" height="27" viewBox="0 0 5 9" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M0 0h1v1H0zM0 1h2v1H0zM0 2h3v1H0zM0 3h4v1H0zM0 4h5v1H0zM0 5h4v1H0zM0 6h3v1H0zM0 7h2v1H0zM0 8h1v1H0z"/></svg>',
+  };
 
   const $  = (s, r = document) => r.querySelector(s);
   const fmt = (n) => (n || 0).toLocaleString('en-US');
@@ -35,7 +39,7 @@
     Hydrate.stream(s, () => {
       if (currentStream === key) {
         const m = METRIC[s.kind] || METRIC.stars;
-        renderDeck(s.items || [], s.archive || [], m);
+        renderDeck(s.items || [], s.archive || [], m, false);
         countUp($('#agg-num'), aggregate(s));
       }
     });
@@ -52,6 +56,34 @@
     selectStream('cs');          // CS active + content shown by default
     setupBlocks();
     startClock();
+  }
+
+  /* ---- boot overlay: fake terminal POST, once per session --------------- */
+  function bootSequence() {
+    const boot = $('#boot');
+    if (!boot) return;
+    if (sessionStorage.getItem('gw-booted')) { boot.remove(); return; }
+    const log = $('#boot-log');
+    const lines = [
+      'SYS://GRAY-WORLD',
+      '> LINK ............ OK',
+      '> MEMORY .......... OK',
+      '> RENDER .......... OK',
+      '',
+      'READY_',
+    ];
+    let i = 0;
+    (function next() {
+      if (i < lines.length) {
+        log.textContent += lines[i++] + '\n';
+        setTimeout(next, i === 1 ? 350 : 150);
+      } else {
+        setTimeout(() => {
+          boot.remove();
+          sessionStorage.setItem('gw-booted', '1');
+        }, 500);
+      }
+    })();
   }
 
   /* ---- identity ---- */
@@ -143,7 +175,7 @@
     const searchInput = $('#search');
     if (searchInput) searchInput.value = '';
 
-    $('#agg-glyph').textContent = m.glyph;
+    $('#agg-glyph').innerHTML = m.glyph;
     $('#agg-label').textContent = s.aggregateLabel;
     countUp($('#agg-num'), aggregate(s));
 
@@ -162,7 +194,7 @@
     }
   }
 
-  function renderDeck(items, archiveItems, m) {
+  function renderDeck(items, archiveItems, m, animate) {
     const timeline = $('#timeline');
     const archive = $('#archive');
     if (timeline) timeline.innerHTML = items.map((it) => entryHTML(it, m)).join('');
@@ -171,6 +203,15 @@
     document.querySelectorAll('#cards > .offlimits, #cards > .archive-wrap').forEach((el) => {
       el.style.display = hasArchive ? '' : 'none';
     });
+
+    /* staccato entrance: entries snap in one-by-one (skipped when this is
+       just a background re-render after live counts arrive) */
+    if (animate !== false) {
+      document.querySelectorAll('#timeline .entry, #archive .entry').forEach((el, i) => {
+        el.classList.add('is-entering');
+        el.style.animationDelay = Math.min(i * 70, 700) + 'ms';
+      });
+    }
   }
 
   function entryHTML(it, m) {
@@ -240,14 +281,39 @@
     resize();
     window.addEventListener('resize', resize);
 
-    const GREYS = ['#d4d4d4', '#c6c6c6', '#b2b2b2', '#9d9d9d'];
+    /* parallax: every block/bar has a depth; cursor position shifts the
+       layers at different rates (near = more, far = less). eased, so it
+       glides. normalized 0..1, 0.5 = centered */
+    let tmx = 0.5, tmy = 0.5;    // target (raw cursor)
+    let smx = 0.5, smy = 0.5;    // smoothed (what we draw with)
+    const SHIFT = 160;           // max px offset at depth 1
+    window.addEventListener('pointermove', (e) => {
+      tmx = e.clientX / W;
+      tmy = e.clientY / H;
+    });
+
     const COUNT = 14;
     const FRAME_MS = 1000 / 12;          // deliberate frame-skip
     const POP_MS = 160;                  // staccato blend at birth/death
 
+    /* palette follows the CSS vars, so night mode flips it automatically */
+    let PAPER = [233, 233, 233];
+    let GREYS = ['#d4d4d4', '#c6c6c6', '#b2b2b2', '#9d9d9d'];
+    let BAR_DARK = '#2e2e2e', BAR_LIGHT = '#8c8c8c';
+    function readPalette() {
+      const cs = getComputedStyle(document.body);
+      const v = (n) => cs.getPropertyValue(n).trim();
+      const n = parseInt(v('--paper').slice(1), 16);
+      PAPER = [n >> 16, (n >> 8) & 255, n & 255];
+      GREYS = [v('--block'), v('--line'), v('--line-2'), v('--line-3')];
+      BAR_DARK = v('--ink');
+      BAR_LIGHT = v('--grey');
+    }
+    readPalette();
+    let wasNight = document.body.classList.contains('night');
+
     // fade = blend the solid grey toward the paper color (opaque, no alpha):
     // paper -> grey at birth, grey -> paper at death, same timing as before
-    const PAPER = [233, 233, 233];       // --paper #e9e9e9
     function mixGrey(hex, t) {
       const n = parseInt(hex.slice(1), 16);
       const r = n >> 16, g = (n >> 8) & 255, b = n & 255;
@@ -284,6 +350,7 @@
         size: s,
         parts: makeParts(s),
         grey: GREYS[(Math.random() * GREYS.length) | 0],
+        depth: 0.25 + Math.random() * 0.75,
         vx: (Math.random() - 0.5) * 0.03,   // px per ms
         vy: (Math.random() - 0.5) * 0.03,
         born: stagger ? performance.now() - Math.random() * dur : performance.now(),
@@ -298,6 +365,7 @@
         horiz: Math.random() < 0.6,
         pos: Math.random(),                          // fraction along cross axis
         thick: 6 + Math.random() * 14,
+        depth: 0.3 + Math.random() * 0.7,
         speed: (Math.random() - 0.5) * 0.00002,      // fraction per ms
         dark: Math.random() < 0.5,
       });
@@ -339,7 +407,14 @@
       const dt = now - last;
       last = now;
 
+      const isNight = document.body.classList.contains('night');
+      if (isNight !== wasNight) { wasNight = isNight; readPalette(); }
+
       if (now >= nextGlitch) triggerGlitch(now);
+
+      // ease the parallax offsets toward the cursor
+      smx += (tmx - smx) * 0.15;
+      smy += (tmy - smy) * 0.15;
 
       ctx.clearRect(0, 0, W, H);
 
@@ -351,19 +426,21 @@
         b.x += b.vx * dt; b.y += b.vy * dt;
         const t = Math.min(age / POP_MS, (b.dur - age) / POP_MS, 1);
         if (t <= 0) continue;
+        const ox = (smx - 0.5) * SHIFT * b.depth;
+        const oy = (smy - 0.5) * SHIFT * b.depth;
         ctx.fillStyle = mixGrey(b.grey, t);
         for (let j = 0; j < b.parts.length; j++) {
           const p = b.parts[j];
-          ctx.fillRect(b.x + p.x, b.y + p.y, p.w, p.h);
+          ctx.fillRect(b.x + p.x + ox, b.y + p.y + oy, p.w, p.h);
         }
       }
 
       // bars (over blocks, like the reference)
       for (const bar of bars) {
         bar.pos = (bar.pos + bar.speed * dt + 1) % 1;
-        ctx.fillStyle = bar.dark ? '#2e2e2e' : '#8c8c8c';
-        if (bar.horiz) ctx.fillRect(-20, bar.pos * H, W + 40, bar.thick);
-        else ctx.fillRect(bar.pos * W, -20, bar.thick, H + 40);
+        ctx.fillStyle = bar.dark ? BAR_DARK : BAR_LIGHT;
+        if (bar.horiz) ctx.fillRect(-20, bar.pos * H + (smy - 0.5) * SHIFT * bar.depth, W + 40, bar.thick);
+        else ctx.fillRect(bar.pos * W + (smx - 0.5) * SHIFT * bar.depth, -20, bar.thick, H + 40);
       }
 
       if (now < glitchUntil) sliceGlitch();
@@ -371,13 +448,32 @@
     requestAnimationFrame(frame);
   }
 
+  const ICON_SUN = '<svg width="14" height="14" viewBox="0 0 7 7" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M3 0h1v1H3zM1 1h1v1H1zM3 1h1v1H3zM5 1h1v1H5zM2 2h3v1H2zM0 3h7v1H0zM2 4h3v1H2zM1 5h1v1H1zM3 5h1v1H3zM5 5h1v1H5zM3 6h1v1H3z"/></svg>';
+  const ICON_MOON = '<svg width="12" height="12" viewBox="0 0 6 6" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M2 0h3v1H2zM1 1h2v1H1zM0 2h2v1H0zM0 3h2v1H0zM1 4h2v1H1zM2 5h3v1H2z"/></svg>';
+
   function startClock() {
+    /* night mode: manual toggle (saved) wins; otherwise auto 20:00–07:00 */
+    const btn = $('#night-toggle');
+    const applyNight = () => {
+      const saved = localStorage.getItem('gw-theme');
+      const h = new Date().getHours();
+      const night = saved ? saved === 'night' : h >= 20 || h < 7;
+      document.body.classList.toggle('night', night);
+      if (btn) btn.innerHTML = night ? ICON_SUN : ICON_MOON;
+    };
+    if (btn) btn.addEventListener('click', () => {
+      localStorage.setItem('gw-theme', document.body.classList.contains('night') ? 'day' : 'night');
+      applyNight();
+    });
+    applyNight();
+
     const el = $('#hud-clock');
     if (!el) return;
     const tick = () => {
       const d = new Date();
       const p = (n) => String(n).padStart(2, '0');
       el.textContent = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+      applyNight();
     };
     tick();
     setInterval(tick, 1000);

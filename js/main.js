@@ -17,7 +17,7 @@
   };
   const ICON = {
     cs:    '<svg width="40" height="28" viewBox="0 0 16 11" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M0 0h16v1H0zM0 10h16v1H0zM0 1h1v9H0zM15 1h1v9h-1zM2 2h2v1H2zM3 3h2v1H3zM4 4h2v1H4zM3 5h2v1H3zM2 6h2v1H2zM2 8h5v1H2z"/></svg>',
-    art:   '<svg width="35" height="30" viewBox="0 0 14 12" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M10 0h3v1h-3zM9 1h3v1H9zM8 2h3v1H8zM7 3h3v1H7zM5 4h4v1H5zM4 5h4v1H4zM3 6h3v1H3zM2 7h3v1H2zM1 8h3v1H1zM0 9h3v1H0zM0 10h2v1H0zM0 11h1v1H0z"/></svg>',
+    art:   '<svg width="22" height="32" viewBox="0 0 9 13" shape-rendering="crispEdges" aria-hidden="true"><path fill="var(--grey)" d="M3 0h3v1H3zM3 1h3v1H3zM3 2h3v1H3zM3 3h3v1H3zM3 4h3v1H3zM3 5h3v1H3z"/><path fill="var(--ink-dim)" d="M2 6h5v1H2zM2 7h5v1H2z"/><path fill="currentColor" d="M2 8h5v1H2zM2 9h5v1H2zM3 10h3v1H3zM3 11h3v1H3zM4 12h1v1H4z"/></svg>',
     video: '<svg width="28" height="28" viewBox="0 0 7 7" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M0 0h2v1H0zM0 1h4v1H0zM0 2h6v1H0zM0 3h7v1H0zM0 4h6v1H0zM0 5h4v1H0zM0 6h2v1H0z"/></svg>',
   };
 

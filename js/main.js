@@ -16,9 +16,9 @@
     views:     { glyph: '<svg width="26" height="18" viewBox="0 0 13 9" shape-rendering="crispEdges" fill="currentColor" fill-rule="evenodd" aria-hidden="true"><path d="M4 0h5v1h2v1h1v1h1v3h-1v1h-1v1h-2v1H4V8H2V7H1V6H0V3h1V2h1V1h2V0zm2 2h1v1h1v3H7v1H6V6H5V3h1V2z"/></svg>', label: 'views' },
   };
   const ICON = {
-    cs:    '<svg width="36" height="24" viewBox="0 0 12 8" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M0 0h12v1H0zM0 7h12v1H0zM0 1h1v6H0zM11 1h1v6h-1zM2 2h2v1H2zM4 3h1v1H4zM2 4h2v1H2zM3 5h4v1H3z"/></svg>',
-    art:   '<svg width="30" height="30" viewBox="0 0 10 10" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M7 0h2v1H7zM6 1h2v1H6zM5 2h2v1H5zM4 3h2v1H4zM3 4h2v1H3zM2 5h2v1H2zM1 6h2v1H1zM0 7h3v1H0zM0 8h2v1H0zM0 9h1v1H0z"/></svg>',
-    video: '<svg width="15" height="27" viewBox="0 0 5 9" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M0 0h1v1H0zM0 1h2v1H0zM0 2h3v1H0zM0 3h4v1H0zM0 4h5v1H0zM0 5h4v1H0zM0 6h3v1H0zM0 7h2v1H0zM0 8h1v1H0z"/></svg>',
+    cs:    '<svg width="40" height="28" viewBox="0 0 16 11" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M0 0h16v1H0zM0 10h16v1H0zM0 1h1v9H0zM15 1h1v9h-1zM2 2h2v1H2zM3 3h2v1H3zM4 4h2v1H4zM3 5h2v1H3zM2 6h2v1H2zM2 8h5v1H2z"/></svg>',
+    art:   '<svg width="32" height="36" viewBox="0 0 8 9" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M2 0h4v1H2zM1 1h1v1H1zM6 1h1v1H6zM1 2h1v1H1zM3 2h2v1H3zM6 2h1v1H6zM1 3h1v1H1zM3 3h2v1H3zM6 3h1v1H6zM0 4h8v1H0zM2 5h1v1H2zM5 5h1v1H5zM2 6h1v1H2zM5 6h1v1H5zM1 7h1v1H1zM6 7h1v1H6zM0 8h1v1H0zM7 8h1v1H7z"/></svg>',
+    video: '<svg width="28" height="28" viewBox="0 0 7 7" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M0 0h2v1H0zM0 1h4v1H0zM0 2h6v1H0zM0 3h7v1H0zM0 4h6v1H0zM0 5h4v1H0zM0 6h2v1H0z"/></svg>',
   };
 
   const $  = (s, r = document) => r.querySelector(s);

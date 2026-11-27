@@ -3,10 +3,12 @@
    Flat neutral greys on a paper field. Hard-edged geometry, offset block
    shadows, dither texture, staccato glitch. No glow, no blur, no gradients
    (hairline strokes excepted). Spacing & type on a strict 8pt grid.
+   The only 3D is the small low-poly objects on the stream tiles.
    ========================================================================= */
 
 :root {
-  /* neutral greyscale — no blue tint */
+  /* neutral greyscale — no blue tint. the JS reads these (background blocks,
+     tile objects), so keep them 6-digit hex */
   --paper:   #e9e9e9;     /* page field */
   --paper-2: #dcdcdc;     /* sunken surfaces */
   --panel:   #f4f4f4;     /* raised surfaces */
@@ -20,6 +22,8 @@
   --ink-dim: #565656;
   --grey:    #8c8c8c;
 
+  --hud-bg:  rgba(244,244,244,.94);
+
   --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --pixel: "Silkscreen", var(--mono);
 
@@ -27,49 +31,8 @@
   --shadow: 4px 4px 0 var(--line-2);
 }
 
-* { box-sizing: border-box; }
-
-/* shared layout: vertical flex stack */
-.block, .stream-view, .stream-panel, .cards, .card, .archive-wrap { display: flex; flex-direction: column; }
-
-html, body { height: 100%; }
-
-/* hero bars bleed past the viewport on purpose — never let them create a
-   horizontal scrollbar (clip on both, body alone doesn't always propagate) */
-html { overflow-x: hidden; }
-
-body {
-  margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--mono);
-  font-size: 16px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-}
-
-::selection { background: var(--ink); color: var(--paper); }
-
-/* ---- background ---- */
-.bg-blocks { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; display: block; }
-
-/* ordered-dither texture over the whole page (sits under the HUD) */
-body::after {
-  content: ""; position: fixed; inset: 0; z-index: 1; pointer-events: none;
-  background-image: repeating-conic-gradient(rgba(27,27,27,.05) 0% 25%, transparent 0% 50%);
-  background-size: 4px 4px;
-}
-
-.muted { color: var(--grey); }
-.cursor { animation: blink 1.1s steps(1) infinite; }
-@keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
-.dot { color: var(--ink); }
-
-/* =========================================================================
-   night mode (20:00–07:00): inverted greyscale, same hard edges
-   ========================================================================= */
-body.night {
+/* night mode (20:00–07:00, or the HUD toggle): inverted greyscale, same hard edges */
+html.night {
   --paper:   #161616;
   --paper-2: #232323;
   --panel:   #0b0b0b;
@@ -82,8 +45,42 @@ body.night {
   --ink:     #e4e4e4;
   --ink-dim: #a9a9a9;
   --grey:    #737373;
+
+  --hud-bg:  rgba(11,11,11,.94);
 }
-body.night .hud { background: rgba(11,11,11,.94); }
+
+* { box-sizing: border-box; }
+
+/* the window scrolls (not the body); the title screen bleeds past the column
+   on purpose, so clip sideways overflow here and nowhere else */
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+::selection { background: var(--ink); color: var(--paper); }
+
+.cursor { animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+.dot { color: var(--ink); }
+
+/* ---- background ---- */
+.bg-blocks { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; display: block; }
+
+/* ordered-dither texture over the whole page (sits under the HUD) */
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 2; pointer-events: none;
+  background-image: repeating-conic-gradient(rgba(27,27,27,.05) 0% 25%, transparent 0% 50%);
+  background-size: 4px 4px;
+}
 
 /* =========================================================================
    HUD bars (fixed top / bottom)
@@ -93,65 +90,101 @@ body.night .hud { background: rgba(11,11,11,.94); }
   display: flex; justify-content: space-between; align-items: center; gap: 16px;
   padding: 8px 24px;
   font-size: 16px; letter-spacing: .5px; color: var(--ink-dim);
-  background: rgba(244,244,244,.94);
+  background: var(--hud-bg);
 }
-.hud--top {
-  top: 0; border-bottom: 1px solid var(--line-2);
-}
-.hud--bot {
-  bottom: 0; border-top: 1px solid var(--line-2);
-}
+.hud--top { top: 0; border-bottom: 1px solid var(--line-2); }
+.hud--bot { bottom: 0; border-top: 1px solid var(--line-2); }
 .hud__c { color: var(--ink); position: absolute; left: 50%; transform: translateX(-50%); }
 .hud__r { color: var(--ink); }
 .hud__toggle {
   width: 22px; height: 22px; padding: 0; vertical-align: middle;
   display: inline-flex; align-items: center; justify-content: center;
   border: 1px solid var(--line-2); background: transparent; color: var(--ink);
-  cursor: pointer; transition: border-color .12s;
+  transition: border-color .12s;
 }
 .hud__toggle:hover { border-color: var(--ink); }
 .hud__toggle svg { display: block; }
 
 /* =========================================================================
-   menu shell
+   page column
    ========================================================================= */
-.menu {
+.page {
   position: relative; z-index: 1;
   max-width: var(--maxw);
   margin: 0 auto;
-  padding: 80px 24px 64px;
-  display: flex; flex-direction: column; gap: 32px;
+  padding: 0 24px 104px;
+  display: flex; flex-direction: column; gap: 56px;
 }
 
-/* ---- title: bare pixel type; snap-shifts during glitch bursts ---- */
-.title-wrap { position: relative; text-align: center; padding: 40px 0; }
+/* ---- title screen: one screen of block field with the title on it ---- */
+.hero {
+  position: relative;
+  min-height: 100vh; min-height: 100svh;
+  margin: 0 calc(50% - 50vw);              /* full-bleed */
+  padding: 72px 16px 96px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+  text-align: center;
+}
 
+/* title: ink face, paper rim, hard offset block — a die-cut sticker, so it
+   reads over whatever block or bar drifts behind it */
 .title {
-  position: relative; z-index: 1;
-  display: inline-block;
   margin: 0;
-  font-family: var(--pixel);
-  font-weight: 400;
-  font-size: clamp(40px, 10vw, 88px);
-  line-height: 1;
-  letter-spacing: 2px;
-  white-space: nowrap;
+  display: flex; justify-content: center; gap: .5em;
+  font-family: var(--pixel); font-weight: 400;
+  font-size: min(9.2vw, 128px);
+  line-height: 1; letter-spacing: .02em; white-space: nowrap;
   color: var(--ink);
+  user-select: none;
 }
+.title__w { position: relative; display: inline-block; isolation: isolate; }
+.title__w::before, .title__w::after {
+  content: attr(data-text);
+  position: absolute; left: 0; top: 0;
+}
+.title__w::before { z-index: -1; color: var(--paper);  -webkit-text-stroke: .14em var(--paper); }
+.title__w::after  { z-index: -2; color: var(--line-3); -webkit-text-stroke: .14em var(--line-3); transform: translate(.085em, .085em); }
 
 /* glitch burst: hard snap, no transition — staccato on purpose */
-.title-wrap.is-glitch .title {
+.hero.is-glitch .title {
   transform: translate(4px, -2px);
-  clip-path: polygon(0 0, 100% 0, 100% 30%, 0 30%, 0 52%, 100% 52%, 100% 100%, 0 100%);
+  clip-path: polygon(-10% -20%, 110% -20%, 110% 30%, -10% 30%, -10% 52%, 110% 52%, 110% 130%, -10% 130%);
 }
 
-/* ---- middle: heart slot + feed ---- */
+.hero__tag {
+  margin: 0; padding: 4px 16px;
+  background: var(--panel); border: 1px solid var(--line-2); box-shadow: var(--shadow);
+  color: var(--ink-dim); letter-spacing: .5px;
+}
+.hero__cue {
+  position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%);
+  padding: 4px 12px;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--pixel); font-size: 16px; letter-spacing: 1px; text-decoration: none; white-space: nowrap;
+}
+.hero__cue:hover { box-shadow: var(--shadow); }
+.hero__arrow { display: inline-block; animation: nudge 1.1s steps(2) infinite; }
+@keyframes nudge { 0% { transform: translateY(-2px); } 100% { transform: translateY(2px); } }
+
+/* ---- sections ---- */
+.block { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 64px; }
+
+/* section label: numbered ink tab + panel plate (always solid, never bare on the background) */
+.head {
+  align-self: flex-start;
+  margin: 0; display: inline-flex; align-items: stretch;
+  border: 1px solid var(--ink); box-shadow: var(--shadow);
+  font-family: var(--pixel); font-weight: 400; font-size: 24px; line-height: 1; letter-spacing: 1px;
+}
+.head__no { padding: 8px; background: var(--ink); color: var(--paper); }
+.head__t  { padding: 8px 16px; background: var(--panel); color: var(--ink); }
+
+/* ---- middle: square picture slot + text panel ---- */
 .middle {
   display: grid; grid-template-columns: minmax(0, 224px) 1fr; gap: 24px;
   align-items: stretch;
 }
 .middle--mirror { grid-template-columns: 1fr minmax(0, 224px); }
-.block { gap: 16px; }
 .whoami__desc {
   background: var(--panel); border: 1px solid var(--line-2);
   box-shadow: var(--shadow);
@@ -161,19 +194,13 @@ body.night .hud { background: rgba(11,11,11,.94); }
 }
 .whoami__desc p { margin: 0; white-space: pre-wrap; }
 .slot { display: flex; }
-.slot__inner { width: 100%; display: flex; }
 .slot__box {
-  width: 100%; aspect-ratio: 1 / 1;
-  border: 1px dashed var(--line-3);
+  width: 100%; aspect-ratio: 1 / 1; overflow: hidden;
+  border: 1px solid var(--line-3);
   box-shadow: var(--shadow);
-  background:
-    repeating-linear-gradient(45deg, var(--paper-2), var(--paper-2) 8px, #d0d0d0 8px, #d0d0d0 16px);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  background: var(--paper-2);
 }
-.slot__box--photo { background: none; overflow: hidden; border-style: solid; }
-.slot__photo { width: 100%; height: 100%; object-fit: cover; display: block; }
-.slot__box--heart { background: none; overflow: hidden; border-style: solid; }
-.slot__box--heart .slot__heart { width: 100%; height: 100%; object-fit: cover; display: block; }
+.slot__img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .feed {
   border: 1px solid var(--line-2); background: var(--panel);
@@ -185,31 +212,32 @@ body.night .hud { background: rgba(11,11,11,.94); }
 .feed__list dt::before { content: "▒ "; color: var(--line-2); }
 .feed__list dd { margin: 0; color: var(--ink); }
 
-/* ---- stream selector ---- */
-.select { display: flex; flex-direction: column; gap: 8px; scroll-margin-top: 72px; }
-.select__head { font-family: var(--pixel); font-size: 24px; letter-spacing: 1px; color: var(--ink); }
-.select__list { display: flex; gap: 16px; flex-wrap: wrap; }
+/* ---- stream tiles: each one holds a low-poly object ---- */
+.select__list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 
 .tile {
-  flex: 1 1 0; min-width: 144px;
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 24px 16px;
+  min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 16px 24px;
   background: var(--panel);
   border: 1px solid var(--line-2);
   color: var(--ink-dim);
-  font: inherit;
   transition: border-color .12s, color .12s, background .12s, transform .12s, box-shadow .12s;
 }
 .tile:hover { border-color: var(--ink); color: var(--ink); transform: translateY(-2px); box-shadow: var(--shadow); }
 .tile.is-active { border-color: var(--ink); color: var(--ink); background: var(--block); box-shadow: var(--shadow); }
-.tile__ico { font-family: var(--mono); font-size: 32px; line-height: 1; color: var(--ink); height: 32px; display: flex; align-items: center; }
+.tile__view { position: relative; width: 136px; max-width: 100%; aspect-ratio: 1 / 1; display: grid; place-items: center; }
+/* flat icon first; the 3D object takes over once its model has loaded */
+.tile__ico { color: var(--ink); display: flex; align-items: center; }
 .tile__ico svg { display: block; }
+.tile__obj { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
+html.has-models .tile__obj { display: block; }
+html.has-models .tile__ico { display: none; }
 .tile__lbl { font-family: var(--pixel); font-size: 24px; letter-spacing: 1px; }
 .tile__sub { font-size: 16px; color: var(--grey); letter-spacing: .5px; }
 
-/* ---- selected stream: aggregate + cards ---- */
-.stream-view { gap: 16px; }
-.stream-panel { scroll-margin-top: 72px; gap: 16px; }
+/* ---- selected stream: aggregate + controls + deck ---- */
+.stream-panel { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
 
 .aggregate {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
@@ -223,10 +251,12 @@ body.night .hud { background: rgba(11,11,11,.94); }
   font-family: var(--pixel); font-size: clamp(40px, 8vw, 64px); line-height: 1; color: var(--ink);
 }
 .aggregate__label { font-size: 16px; letter-spacing: .5px; color: var(--ink-dim); }
+/* the total as a sum: "4 = 1 projects + 3 courses" */
+.aggregate__row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 8px 16px; }
+.aggregate__parts { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-family: var(--pixel); font-size: 24px; line-height: 1; color: var(--ink-dim); }
+.aggregate__parts:empty { display: none; }
+.aggregate__parts small { font-family: var(--mono); font-size: 16px; color: var(--grey); }
 
-.cards { gap: 16px; }
-
-/* stream mini-interface controls */
 .stream-controls { display: flex; gap: 8px; align-items: stretch; }
 .searchbar {
   flex: 1; display: flex; align-items: center; gap: 8px; height: 40px;
@@ -240,34 +270,31 @@ body.night .hud { background: rgba(11,11,11,.94); }
 }
 .searchbar input::placeholder { color: var(--grey); }
 .ctrl-btn {
-  width: 40px; height: 40px; flex-shrink: 0;
+  width: 40px; height: 40px; flex-shrink: 0; padding: 0;
   border: 1px solid var(--line-2); background: var(--panel); color: var(--ink-dim);
   font-size: 16px; transition: border-color .12s, color .12s, box-shadow .12s;
 }
 .ctrl-btn:hover { border-color: var(--ink); color: var(--ink); box-shadow: var(--shadow); }
 
-/* the deck is its own nested scroller (timeline + off-limits + archive share it) */
-.cards--deck {
-  max-height: 80vh; overflow-y: auto; overflow-x: hidden; padding: 8px;
-  gap: 8px;
+/* the deck is part of the page (it scrolls with it, no nested scroller):
+   a solid paper sheet so the timeline never sits bare on the background */
+.deck {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 16px 16px 16px 8px;
   background: var(--paper);
   border: 1px solid var(--line-2);
-  overscroll-behavior: contain;
-  scrollbar-width: none;                 /* hidden, still scrolls */
+  overflow: hidden;                      /* trims the tilted off-limits band */
 }
-.cards--deck > * { flex-shrink: 0; }
-.cards--deck > .timeline-track { margin-bottom: 0; }
-/* off-limits bleeds edge-to-edge inside the deck */
-.cards--deck > .offlimits { margin: 0 -8px; }
-.cards--deck::-webkit-scrollbar { display: none; }
-.card.is-hidden { display: none; }
 
-/* timeline rail inside the deck */
+/* timeline rail */
 .timeline-track { position: relative; }
 .timeline-track::before {
   content: ""; position: absolute; left: 16px; top: 8px; bottom: 8px; width: 2px;
   background: var(--line-2); transform: translateX(-50%);
 }
+/* a stream with no works yet: one quiet line, no rail */
+.timeline-track.is-empty::before { display: none; }
+.deck__empty { margin: 0; padding: 24px 16px; text-align: center; color: var(--grey); letter-spacing: .5px; }
 .entry { position: relative; padding-left: 40px; padding-bottom: 16px; }
 .entry:last-child { padding-bottom: 0; }
 .entry.is-hidden { display: none; }
@@ -285,8 +312,8 @@ body.night .hud { background: rgba(11,11,11,.94); }
 .entry__title { font-family: var(--pixel); font-size: 16px; letter-spacing: .5px; color: var(--ink); }
 
 .card {
+  display: flex; flex-direction: column; gap: 16px;
   border: 1px solid var(--line-2); background: var(--panel); padding: 16px;
-  gap: 16px;
   box-shadow: var(--shadow);
   transition: border-color .12s;
 }
@@ -294,7 +321,7 @@ body.night .hud { background: rgba(11,11,11,.94); }
 .card__top { display: flex; gap: 16px; }
 .card__front {
   flex: 1.6; aspect-ratio: 16/9; border: 1px solid var(--line-2);
-  background: repeating-linear-gradient(135deg, #e4e4e4, #e4e4e4 8px, #d6d6d6 8px, #d6d6d6 16px);
+  background: repeating-linear-gradient(135deg, var(--paper-2), var(--paper-2) 8px, var(--line) 8px, var(--line) 16px);
   background-size: cover; background-position: center;
   position: relative; overflow: hidden;
 }
@@ -312,46 +339,59 @@ body.night .hud { background: rgba(11,11,11,.94); }
 .card__src:hover { text-decoration: underline; }
 .card__desc { margin: 0; font-size: 16px; color: var(--ink-dim); }
 
-/* ---- off limits boundary: dark ink band on the paper field ---- */
+/* ---- off limits boundary: an ink band thrown across the sheet ---- */
 .offlimits {
-  position: relative; height: 120px; overflow: hidden;
-  background: var(--paper);
+  position: relative; height: 120px;
+  margin: 0 -16px 0 -8px;                /* bleed to the sheet's edges */
 }
 .offlimits__band {
   position: absolute; left: -4%; right: -4%; top: 50%;
   transform: translateY(-50%) rotate(-2.5deg);
-  height: 40px; background: #b8b8b8;
+  height: 40px; background: var(--ink);
   display: flex; align-items: center; justify-content: center;
 }
 .offlimits__band span {
   font-family: var(--mono); font-size: 16px; letter-spacing: 4px;
-  color: #1a1a1a; font-weight: 600;
+  color: var(--paper); font-weight: 600;
 }
 
 /* ---- archive (dimmed) ---- */
-.archive-wrap { gap: 8px; }
+/* one sentence under the band saying what the line means */
+.offlimits__note { margin: 0; padding: 0 16px 8px; text-align: center; color: var(--ink-dim); }
 .cards--archive .entry { opacity: .55; }
 
 /* =========================================================================
    responsive
    ========================================================================= */
 @media (max-width: 720px) {
-  .menu { padding: 72px 16px 72px; gap: 24px; }
+  .page { padding: 0 16px 88px; gap: 40px; }
 
   /* HUD: drop the center status + long suffix so nothing collides */
   .hud { padding: 8px 16px; font-size: 16px; gap: 8px; }
-  .hud__l, .hud__r { max-width: 42%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hud__l, .hud__r { max-width: 46%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hud--top .hud__c { display: none; }
 
-  .middle { grid-template-columns: 1fr; }
+  /* title stacks into two big lines instead of shrinking to fit one */
+  .title { flex-direction: column; align-items: center; gap: .14em; font-size: 19vw; }
+
+  .head { font-size: 20px; }
+
+  .middle, .middle--mirror { grid-template-columns: 1fr; }
   .middle--mirror .slot { order: -1; }  /* pfp above the bio on mobile */
-  .slot__inner { max-width: 160px; margin: 0 auto; }
+  .slot__box { max-width: 160px; margin: 0 auto; }
 
   /* stream tiles: full-width rows = big tap targets */
-  .select__list { flex-direction: column; }
-  .tile { min-width: 0; flex-direction: row; justify-content: center; padding: 16px; gap: 16px; }
+  .select__list { grid-template-columns: 1fr; gap: 8px; }
+  .tile { flex-direction: row; justify-content: center; padding: 8px 16px; gap: 16px; }
+  .tile__view { width: 72px; flex-shrink: 0; }
+  .tile__ico svg { transform: scale(.8); }
+
+  .deck { padding: 16px 8px 16px 0; }
+  .offlimits { margin: 0 -8px 0 0; }
+  .entry { padding-left: 32px; }
 
   /* cards: stack cover over the count, count becomes a horizontal strip */
+  .card { padding: 12px; }
   .card__top { flex-direction: column; }
   .card__front { flex: none; width: 100%; }
   .card__count { flex-direction: row; gap: 12px; padding: 12px 8px; }

@@ -5,10 +5,11 @@
    When a stream is selected, Hydrate.stream() walks its cards and upgrades
    each count from the best available source, in priority order:
 
-     1. BAKED counts  — window.BAKED_COUNTS from cards/counts.js, generated
-        offline by tools/sync_counts.py. Covers providers the browser can't
-        reach (Pixiv: login required; Bilibili: no CORS) and pins numbers
-        you want fixed. Works from file:// because it's a plain script.
+     1. BAKED counts  — window.BAKED_COUNTS, an optional { url: number }
+        table for pinning a number by hand. Nothing writes it any more: the
+        daily numbers now arrive on the cards themselves, from cards/live.js
+        (tools/sync_data.py), which covers what the browser can't reach
+        (Pixiv: login required; Bilibili: no CORS; YouTube: needs a key).
      2. LIVE fetch    — the only provider the browser can call keyless:
            GitHub   api.github.com            (no key, 60 req/h, cached 1h)
      3. STATIC count  — whatever the card already has. Always the fallback.
@@ -70,7 +71,7 @@
     /* YouTube, Pixiv + Bilibili are intentionally NOT here:
          - YouTube needs an API key, and keys never go in public files
          - Pixiv needs OAuth login, Bilibili sends no CORS headers
-       tools/sync_counts.py handles all three offline into cards/counts.js. */
+       tools/sync_data.py fetches all three once a day into cards/live.js. */
   ];
 
   function detect(url) {

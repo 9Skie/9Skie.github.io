@@ -1,0 +1,36 @@
+{
+ "days": [
+  {
+   "date": "2026-11-26",
+   "stars": 4,
+   "views": 3514,
+   "likes": 3,
+   "github_stars": 4,
+   "youtube_views": 65,
+   "bilibili_views": 3449,
+   "pixiv_bookmarks": 3,
+   "bilibili_followers": 30,
+   "works": {
+    "cs": 16,
+    "art": 8,
+    "video": 8
+   }
+  },
+  {
+   "date": "2026-11-27",
+   "stars": 4,
+   "views": 3514,
+   "likes": 3,
+   "github_stars": 4,
+   "youtube_views": 65,
+   "bilibili_views": 3449,
+   "pixiv_bookmarks": 3,
+   "bilibili_followers": 30,
+   "works": {
+    "cs": 17,
+    "art": 8,
+    "video": 8
+   }
+  }
+ ]
+}

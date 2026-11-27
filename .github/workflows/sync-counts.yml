@@ -1,15 +1,20 @@
-# Sync card counts (Pixiv / Bilibili / YouTube / GitHub) into cards/counts.js
+# Pull my real works and their numbers into the site, once a day
 #
-# Runs daily + on demand. Bakes fresh numbers into cards/counts.js and
-# commits it back only when something changed.
+# Runs tools/sync_data.py, which asks GitHub, YouTube, Bilibili and Pixiv
+# what I have published and how each work is doing, then commits whatever
+# changed: cards/live.js, cards/history.json and any new cover pictures.
+# The site reads those files as they are; there is no server anywhere.
 #
 # Secrets (repo -> Settings -> Secrets and variables -> Actions):
-#   PIXIV_REFRESH_TOKEN   Pixiv likes via pixivpy (see @upbit/pixivpy docs)
-#   YOUTUBE_API_KEY       YouTube Data API v3 key
+#   YOUTUBE_API_KEY       YouTube Data API v3 key (without it: only the newest 15 videos)
+#   PIXIV_REFRESH_TOKEN   Pixiv login for its app API (without it: Pixiv is skipped)
 #
-# GitHub stars and Bilibili views need no credentials.
+# GitHub and Bilibili need no secrets.
+#
+# GitHub switches a scheduled workflow off after 60 days in which nothing
+# happens in the repository. This one commits every day, so it stays on.
 
-name: sync counts
+name: sync data
 
 on:
   schedule:
@@ -17,7 +22,11 @@ on:
   workflow_dispatch:          # manual run from the Actions tab
 
 permissions:
-  contents: write             # let the bot commit counts.js back
+  contents: write             # let the bot commit the data back
+
+concurrency:
+  group: sync-data            # never two runs at once
+  cancel-in-progress: false
 
 jobs:
   sync:
@@ -29,23 +38,24 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install pixivpy (Pixiv only)
-        run: pip install pixivpy
+      - name: Install pixivpy3 (Pixiv only)
+        run: pip install "pixivpy3==3.7.5"   # pinned: a newer version must not change the daily run by surprise
 
-      - name: Bake counts into cards/counts.js
+      - name: Pull works and numbers from the four accounts
         env:
-          PIXIV_REFRESH_TOKEN: ${{ secrets.PIXIV_REFRESH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-        run: python3 tools/sync_counts.py
+          PIXIV_REFRESH_TOKEN: ${{ secrets.PIXIV_REFRESH_TOKEN }}
+        run: python3 tools/sync_data.py
 
-      - name: Commit if counts changed
+      - name: Commit what changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add cards/counts.js
+          git add -A cards
           if git diff --cached --quiet; then
-            echo "no count changes"
+            echo "nothing changed"
           else
-            git commit -m "chore: sync card counts"
-            git push
+            git commit -m "chore: daily data sync"
+            git push || (git pull --rebase && git push)
           fi

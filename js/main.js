@@ -1,10 +1,18 @@
 /* =========================================================================
-   main.js  —  menu screen + stream panel
+   main.js  —  the page: identity, roots feed, stream tiles, stream panel
    =========================================================================
-   Renders the menu (identity, roots feed, stream tiles) and the selected
-   stream's aggregate number + cards (+ dimmed archive past the OFF LIMITS
-   line). Clicking a tile switches streams. Stream data lives in cards/*,
-   CS star counts are fetched live from GitHub.
+   Renders everything you read: bio, the "what I love" list, the stream
+   tiles, and the selected stream's aggregate number + cards (+ dimmed
+   archive past the OFF LIMITS line). Stream data lives in cards/*, counts
+   come from js/hydrate.js.
+
+   The background (flat grey blocks + drifting bars) is drawn here too.
+
+   The low-poly 3D objects on the stream tiles are js/objects.js. It is
+   loaded last and is purely an extra: this file never waits for it, and
+   the page is complete without it. The two only talk through events:
+       gw:theme    day/night flipped      -> the objects re-read the palette
+       gw:stream   a stream was selected  -> that tile's object reacts
    ========================================================================= */
 
 (function () {
@@ -15,20 +23,27 @@
     likes:     { glyph: '<svg width="21" height="18" viewBox="0 0 7 6" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M1 0h2v1H1zM4 0h2v1H4zM0 1h7v1H0zM0 2h7v1H0zM1 3h5v1H1zM2 4h3v1H2zM3 5h1v1H3z"/></svg>', label: 'likes' },
     views:     { glyph: '<svg width="26" height="18" viewBox="0 0 13 9" shape-rendering="crispEdges" fill="currentColor" fill-rule="evenodd" aria-hidden="true"><path d="M4 0h5v1h2v1h1v1h1v3h-1v1h-1v1h-2v1H4V8H2V7H1V6H0V3h1V2h1V1h2V0zm2 2h1v1h1v3H7v1H6V6H5V3h1V2z"/></svg>', label: 'views' },
   };
+  /* flat pixel icons: shown on a tile until (or unless) its 3D object loads */
   const ICON = {
     cs:    '<svg width="40" height="28" viewBox="0 0 16 11" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M0 0h16v1H0zM0 10h16v1H0zM0 1h1v9H0zM15 1h1v9h-1zM2 2h2v1H2zM3 3h2v1H3zM4 4h2v1H4zM3 5h2v1H3zM2 6h2v1H2zM2 8h5v1H2z"/></svg>',
     art:   '<svg width="33" height="33" viewBox="0 0 13 13" shape-rendering="crispEdges" aria-hidden="true"><path fill="var(--grey)" d="M11 0h2v1h-2zM10 1h2v1h-2zM9 2h2v1H9zM8 3h2v1H8zM7 4h2v1H7zM6 5h2v1H6z"/><path fill="var(--ink-dim)" d="M4 6h4v1H4zM3 7h4v1H3z"/><path fill="currentColor" d="M2 8h4v1H2zM1 9h4v1H1zM0 10h4v1H0zM0 11h3v1H0zM0 12h2v1H0z"/></svg>',
     video: '<svg width="28" height="28" viewBox="0 0 7 7" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M0 0h2v1H0zM0 1h4v1H0zM0 2h6v1H0zM0 3h7v1H0zM0 4h6v1H0zM0 5h4v1H0zM0 6h2v1H0z"/></svg>',
   };
+  /* which model (a named object in assets/models/grayworld.glb) sits on which tile */
+  const MODEL = { cs: 'terminal', art: 'brush', video: 'play' };
 
+  const root = document.documentElement;
   const $  = (s, r = document) => r.querySelector(s);
   const fmt = (n) => (n || 0).toLocaleString('en-US');
   const esc = (s) => String(s == null ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const emit = (name, detail) => document.dispatchEvent(new CustomEvent(name, { detail }));
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ---- card count hydration -------------------------------------------
-     Counts are auto-hooked from each card's url by js/hydrate.js (live
-     GitHub/YouTube fetch + baked counts from tools/sync_counts.py).
+     The cards and their counts come from cards/live.js, written once a
+     day by tools/sync_data.py. js/hydrate.js then refreshes GitHub stars
+     live in the browser, from each card's url.
      Runs once per stream, then re-renders if that stream is still shown. */
   let currentStream = null;
   const hydrated = new Set();
@@ -41,6 +56,7 @@
         const m = METRIC[s.kind] || METRIC.stars;
         renderDeck(s.items || [], s.archive || [], m, false);
         countUp($('#agg-num'), aggregate(s));
+    showParts(s);
       }
     });
   }
@@ -56,34 +72,8 @@
     selectStream('cs');          // CS active + content shown by default
     setupBlocks();
     startClock();
-  }
-
-  /* ---- boot overlay: fake terminal POST, once per session --------------- */
-  function bootSequence() {
-    const boot = $('#boot');
-    if (!boot) return;
-    if (sessionStorage.getItem('gw-booted')) { boot.remove(); return; }
-    const log = $('#boot-log');
-    const lines = [
-      'SYS://GRAY-WORLD',
-      '> LINK ............ OK',
-      '> MEMORY .......... OK',
-      '> RENDER .......... OK',
-      '',
-      'READY_',
-    ];
-    let i = 0;
-    (function next() {
-      if (i < lines.length) {
-        log.textContent += lines[i++] + '\n';
-        setTimeout(next, i === 1 ? 350 : 150);
-      } else {
-        setTimeout(() => {
-          boot.remove();
-          sessionStorage.setItem('gw-booted', '1');
-        }, 500);
-      }
-    })();
+    // the 3D objects on the tiles: an extra on top of a page that already works
+    import('./objects.js?v=7').catch((err) => console.warn('[gray world] 3D objects did not load:', err));
   }
 
   /* ---- identity ---- */
@@ -104,20 +94,47 @@
 
   function aggregate(stream) {
     const sum = (arr) => (arr || []).reduce((s, it) => s + (it.count || 0), 0);
-    return sum(stream.items) + sum(stream.archive);
+    const off = Object.values(stream.offPageCounts || {}).reduce((s, n) => s + n, 0);   // counted, not shown as cards
+    return sum(stream.items) + sum(stream.archive) + off;
+  }
+
+  /* the total as a sum: "4 = 1 projects + 3 courses". Only when the stream names its parts. */
+  function showParts(stream) {
+    const num = $('#agg-num');
+    if (!num) return;
+    let row = num.parentNode;
+    if (!row.classList.contains('aggregate__row')) {
+      row = document.createElement('span');
+      row.className = 'aggregate__row';
+      num.parentNode.insertBefore(row, num);
+      row.appendChild(num);
+      const p = document.createElement('span');
+      p.className = 'aggregate__parts';
+      p.id = 'agg-parts';
+      row.appendChild(p);
+    }
+    const parts = stream.parts || [];
+    const by = { ...(stream.offPageCounts || {}) };
+    (stream.items || []).concat(stream.archive || []).forEach((it) => {
+      const k = it.part || parts[0];
+      by[k] = (by[k] || 0) + (it.count || 0);
+    });
+    $('#agg-parts').innerHTML = parts.length < 2 ? '' :
+      '<span>=</span>' + parts.filter((k, i) => i < 2 || by[k]).map((k) => `<span>${fmt(by[k] || 0)} <small>${esc(k)}</small></span>`).join('<span>+</span>');
   }
 
   /* ---- stream tiles ---- */
   function renderStreams() {
     const list = $('#stream-list');
     if (!list) return;
-    const keys = Object.keys(STREAMS);
-    list.innerHTML = keys.map((key, i) => {
+    list.innerHTML = Object.keys(STREAMS).map((key) => {
       const s = STREAMS[key];
-      const active = i === 0 ? ' is-active' : '';
       return `
-        <button class="tile${active}" data-stream="${esc(key)}" type="button">
-          <span class="tile__ico">${ICON[key] || '·'}</span>
+        <button class="tile" data-stream="${esc(key)}" type="button">
+          <span class="tile__view">
+            <span class="tile__ico">${ICON[key] || '·'}</span>
+            ${MODEL[key] ? `<canvas class="tile__obj" data-model="${esc(MODEL[key])}" aria-hidden="true"></canvas>` : ''}
+          </span>
           <span class="tile__lbl">${esc(s.label)}</span>
           <span class="tile__sub">${esc(s.sub || '')}</span>
         </button>`;
@@ -148,8 +165,7 @@
     const top = $('#deck-top');
     if (top) {
       top.addEventListener('click', () => {
-        const deck = $('#cards');
-        if (deck) deck.scrollTo({ top: 0, behavior: 'smooth' });
+        $('#selector').scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
       });
     }
   }
@@ -162,8 +178,11 @@
     currentStream = key;
     const m = METRIC[s.kind] || METRIC.stars;
 
-    document.querySelectorAll('.tile').forEach((t) =>
-      t.classList.toggle('is-active', t.dataset.stream === key));
+    document.querySelectorAll('.tile').forEach((t) => {
+      const on = t.dataset.stream === key;
+      t.classList.toggle('is-active', on);
+      t.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
 
     const dotsEl = $('#hud-dots');
     if (dotsEl) {
@@ -178,29 +197,32 @@
     $('#agg-glyph').innerHTML = m.glyph;
     $('#agg-label').textContent = s.aggregateLabel;
     countUp($('#agg-num'), aggregate(s));
+    showParts(s);
 
     renderDeck(s.items || [], s.archive || [], m);
-
-    // reset the deck to the top when the stream actually changes
-    if (changed) {
-      const deck = $('#cards');
-      if (deck) deck.scrollTop = 0;
-    }
 
     // auto-hook counts from card urls (once per stream)
     if (!hydrated.has(key)) {
       hydrated.add(key);
       hydrateStream(key);
     }
+
+    if (changed) emit('gw:stream', key);
   }
 
   function renderDeck(items, archiveItems, m, animate) {
     const timeline = $('#timeline');
     const archive = $('#archive');
-    if (timeline) timeline.innerHTML = items.map((it) => entryHTML(it, m)).join('');
+    if (timeline) {
+      // a stream with nothing published yet (Pixiv, for now) says so instead of showing a bare rail
+      timeline.classList.toggle('is-empty', !items.length);
+      timeline.innerHTML = items.length
+        ? items.map((it) => entryHTML(it, m)).join('')
+        : '<p class="deck__empty">nothing published here yet<span class="cursor">_</span></p>';
+    }
     if (archive) archive.innerHTML = archiveItems.map((it) => entryHTML(it, m)).join('');
     const hasArchive = archiveItems.length > 0;
-    document.querySelectorAll('#cards > .offlimits, #cards > .archive-wrap').forEach((el) => {
+    document.querySelectorAll('#cards > .offlimits, #cards > .offlimits__note, #cards > .cards--archive').forEach((el) => {
       el.style.display = hasArchive ? '' : 'none';
     });
 
@@ -237,7 +259,7 @@
         </div>
         <div class="card__meta">
           <div class="card__tags">${tags}</div>
-          <a class="card__src" href="${esc(it.url || '#')}" target="_blank" rel="noopener">view \u2197</a>
+          <a class="card__src" href="${esc(it.url || '#')}" target="_blank" rel="noopener">view ↗</a>
         </div>
         <p class="card__desc">${esc(it.desc || '')}</p>
       </article>`;
@@ -246,6 +268,7 @@
   /* ---- animated count-up (no library) ---- */
   function countUp(el, to) {
     if (!el) return;
+    if (calm) { el.textContent = fmt(to); return; }
     const dur = 900;
     const start = performance.now();
     function step(now) {
@@ -263,7 +286,7 @@
      pop in/out staccato (solid color blended toward the paper, never alpha);
      bars drift slowly and wrap. Every few seconds a
      short glitch burst shifts horizontal slices of the canvas sideways and
-     snap-shifts the hero geometry (via .is-glitch on .title-wrap). */
+     snap-shifts the hero geometry (via .is-glitch on .hero). */
   function setupBlocks() {
     const field = document.getElementById('bg-blocks');
     if (!field || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -301,7 +324,7 @@
     let GREYS = ['#d4d4d4', '#c6c6c6', '#b2b2b2', '#9d9d9d'];
     let BAR_DARK = '#2e2e2e', BAR_LIGHT = '#8c8c8c';
     function readPalette() {
-      const cs = getComputedStyle(document.body);
+      const cs = getComputedStyle(root);
       const v = (n) => cs.getPropertyValue(n).trim();
       const n = parseInt(v('--paper').slice(1), 16);
       PAPER = [n >> 16, (n >> 8) & 255, n & 255];
@@ -310,7 +333,7 @@
       BAR_LIGHT = v('--grey');
     }
     readPalette();
-    let wasNight = document.body.classList.contains('night');
+    let wasNight = root.classList.contains('night');
 
     // fade = blend the solid grey toward the paper color (opaque, no alpha):
     // paper -> grey at birth, grey -> paper at death, same timing as before
@@ -349,7 +372,7 @@
         y: Math.random() * H,
         size: s,
         parts: makeParts(s),
-        grey: GREYS[(Math.random() * GREYS.length) | 0],
+        grey: (Math.random() * GREYS.length) | 0,   // index into GREYS: a theme flip recolours live blocks too
         depth: 0.25 + Math.random() * 0.75,
         vx: (Math.random() - 0.5) * 0.03,   // px per ms
         vy: (Math.random() - 0.5) * 0.03,
@@ -375,7 +398,7 @@
     for (let i = 0; i < COUNT; i++) blocks.push(spawnBlock(true));
 
     /* glitch bursts: rare + short (tasteful) */
-    const titleWrap = document.querySelector('.title-wrap');
+    const titleWrap = document.querySelector('.hero');
     let glitchUntil = 0;
     let nextGlitch = performance.now() + 3000 + Math.random() * 4000;
 
@@ -407,7 +430,7 @@
       const dt = now - last;
       last = now;
 
-      const isNight = document.body.classList.contains('night');
+      const isNight = root.classList.contains('night');
       if (isNight !== wasNight) { wasNight = isNight; readPalette(); }
 
       if (now >= nextGlitch) triggerGlitch(now);
@@ -428,7 +451,7 @@
         if (t <= 0) continue;
         const ox = (smx - 0.5) * SHIFT * b.depth;
         const oy = (smy - 0.5) * SHIFT * b.depth;
-        ctx.fillStyle = mixGrey(b.grey, t);
+        ctx.fillStyle = mixGrey(GREYS[b.grey], t);
         for (let j = 0; j < b.parts.length; j++) {
           const p = b.parts[j];
           ctx.fillRect(b.x + p.x + ox, b.y + p.y + oy, p.w, p.h);
@@ -452,17 +475,23 @@
   const ICON_MOON = '<svg width="12" height="12" viewBox="0 0 6 6" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><path d="M2 0h3v1H2zM1 1h2v1H1zM0 2h2v1H0zM0 3h2v1H0zM1 4h2v1H1zM2 5h3v1H2z"/></svg>';
 
   function startClock() {
-    /* night mode: manual toggle (saved) wins; otherwise auto 20:00–07:00 */
+    /* night mode: manual toggle (saved) wins; otherwise auto 20:00–07:00.
+       The class lives on <html>; index.html sets it before first paint. */
     const btn = $('#night-toggle');
+    let shown = null;
     const applyNight = () => {
-      const saved = localStorage.getItem('gw-theme');
+      let saved = null;
+      try { saved = localStorage.getItem('gw-theme'); } catch (e) {}
       const h = new Date().getHours();
       const night = saved ? saved === 'night' : h >= 20 || h < 7;
-      document.body.classList.toggle('night', night);
+      if (night === shown) return;
+      shown = night;
+      root.classList.toggle('night', night);
       if (btn) btn.innerHTML = night ? ICON_SUN : ICON_MOON;
+      emit('gw:theme', night ? 'night' : 'day');
     };
     if (btn) btn.addEventListener('click', () => {
-      localStorage.setItem('gw-theme', document.body.classList.contains('night') ? 'day' : 'night');
+      try { localStorage.setItem('gw-theme', root.classList.contains('night') ? 'day' : 'night'); } catch (e) {}
       applyNight();
     });
     applyNight();

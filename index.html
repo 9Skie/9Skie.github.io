@@ -1,22 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="fx-type fx-align fx-grid fx-calm fx-icons fx-dither fx-marks fx-vignette fx-day fx-nocgi fx-beside bg-depth lab-fixes" style="--vignette: 0.75"><!-- the look: css/look.css -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GRAY WORLD_</title>
-  <meta name="description" content="code · art · video. a personal system." />
+  <meta name="description" content="Just a moth who chases the flames" />
 
-  <!-- pixel display font for labels; ASCII art uses strict monospace (see CSS) -->
+  <!-- pixel display font for labels; body text is strict monospace (see CSS) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/style.css?v=1" />
+  <link rel="stylesheet" href="css/style.css?v=6" />
+  <link rel="stylesheet" href="css/look.css?v=1" />
+
+  <!-- three.js draws the low-poly objects on the stream tiles (js/objects.js). pinned version, no build step -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
 </head>
 <body>
 
   <!-- background texture layer (flat blocks + bars, drawn by JS) -->
   <canvas class="bg-blocks" id="bg-blocks" aria-hidden="true"></canvas>
+  <!-- the background with depth (js/field.js); the flat one above is its fallback -->
+  <canvas class="bg-blocks" id="depth-field" aria-hidden="true"></canvas>
 
   <!-- top HUD bar -->
   <header class="hud hud--top">
@@ -25,41 +38,40 @@
     <span class="hud__r"><button class="hud__toggle" id="night-toggle" type="button" title="toggle day/night" aria-label="toggle day/night"></button> <span id="hud-clock">--:--:--</span></span>
   </header>
 
-  <main class="menu">
+  <main class="page">
 
-    <!-- title -->
-    <section class="title-wrap">
-      <h1 class="title">GRAY WORLD <span class="cursor">_</span></h1>
+    <!-- title screen -->
+    <section class="hero" id="top">
+      <h1 class="title" aria-label="GRAY WORLD">
+        <span class="title__w" data-text="GRAY" aria-hidden="true">GRAY</span>
+        <span class="title__w" data-text="WORLD_" aria-hidden="true">WORLD<span class="cursor">_</span></span>
+      </h1>
+      <p class="hero__tag">Just a moth who chases the flames</p>
+      <a class="hero__cue" href="#who" aria-label="scroll to content"><span class="hero__arrow">▼</span> SCROLL</a>
     </section>
 
-
-
     <!-- who am i: description (left) + image (right, mirrored) -->
-    <section class="block">
-      <div class="select__head">▌Who am I <span class="cursor">_</span></div>
+    <section class="block" id="who">
+      <h2 class="head"><span class="head__no">01</span><span class="head__t">Who am I<span class="cursor">_</span></span></h2>
       <div class="middle middle--mirror">
         <div class="whoami__desc">
           <p data-fill="bio">…</p>
         </div>
         <div class="slot">
-          <div class="slot__inner">
-            <div class="slot__box slot__box--photo">
-              <img class="slot__photo" src="assets/pfp.png" alt="profile photo" />
-            </div>
+          <div class="slot__box">
+            <img class="slot__img" src="assets/pfp.jpg?v=928c9aba" alt="profile photo" />
           </div>
         </div>
       </div>
     </section>
 
-    <!-- what I love: heart (left) + roots (right) -->
-    <section class="block">
-      <div class="select__head">▌What I Love <span class="cursor">_</span></div>
+    <!-- what I love: heart painting (left) + roots (right) -->
+    <section class="block" id="love">
+      <h2 class="head"><span class="head__no">02</span><span class="head__t">What I Love<span class="cursor">_</span></span></h2>
       <div class="middle">
-        <div class="slot" id="heart-slot">
-          <div class="slot__inner">
-            <div class="slot__box slot__box--heart">
-              <img class="slot__heart" src="assets/heart.png" alt="low-poly heart" />
-            </div>
+        <div class="slot">
+          <div class="slot__box">
+            <img class="slot__img" src="assets/heart.jpg?v=dcfa8a39" alt="low-poly heart" />
           </div>
         </div>
         <div class="feed">
@@ -68,15 +80,12 @@
       </div>
     </section>
 
-    <!-- stream selector -->
-    <section class="select" id="selector">
-      <div class="select__head">▌Things I've Done<span class="cursor">_</span></div>
+    <!-- things I've done: stream selector + the selected stream -->
+    <section class="block" id="selector">
+      <h2 class="head"><span class="head__no">03</span><span class="head__t">Things I've Done<span class="cursor">_</span></span></h2>
       <div class="select__list" id="stream-list"><!-- filled by JS --></div>
-    </section>
 
-    <!-- stream view (hidden until a tile is clicked) -->
-    <section class="stream-view" id="stream-view">
-      <div class="stream-panel">
+      <div class="stream-panel" id="stream-view">
         <div class="aggregate">
           <span class="aggregate__glyph" id="agg-glyph">★</span>
           <span class="aggregate__num" id="agg-num">0</span>
@@ -87,18 +96,18 @@
             <span class="searchbar__prompt">&gt;_</span>
             <input type="search" id="search" placeholder="filter this stream..." aria-label="filter cards" autocomplete="off">
           </label>
-          <button class="ctrl-btn" id="deck-top" type="button" title="back to top of deck" aria-label="back to top of deck">↑</button>
+          <button class="ctrl-btn" id="deck-top" type="button" title="back to the stream tiles" aria-label="back to the stream tiles">↑</button>
         </div>
-        <div class="cards cards--deck" id="cards">
+        <div class="deck" id="cards">
           <div class="timeline-track" id="timeline"><!-- JS: entries --></div>
 
           <div class="offlimits" aria-label="off limits">
             <div class="offlimits__band"><span>OFF LIMITS<span class="cursor">_</span></span></div>
           </div>
+          <!-- what the line means, for visitors. Shown only when there is something below it. -->
+          <p class="offlimits__note">Everything below is from before I synced this site with the platforms I post on.</p>
 
-          <div class="archive-wrap" aria-label="archive">
-            <div class="timeline-track cards--archive" id="archive"><!-- JS: archive entries --></div>
-          </div>
+          <div class="timeline-track cards--archive" id="archive" aria-label="archive"><!-- JS: archive entries --></div>
         </div>
       </div>
     </section>
@@ -112,13 +121,15 @@
     <span class="hud__r">灰色地带<span class="cursor">_</span></span>
   </footer>
 
-  <script src="js/data.js?v=1"></script>
-  <script src="js/card.js?v=1"></script>
+  <script src="js/data.js?v=5"></script>
+  <script src="js/card.js?v=6"></script>
   <script src="js/hydrate.js?v=1"></script>
-  <script src="cards/counts.js?v=1"></script><!-- generated by tools/sync_counts.py; ok if missing -->
-  <script src="cards/1 cs/cards.js?v=1"></script>
-  <script src="cards/2 art/cards.js?v=1"></script>
-  <script src="cards/3 videos/cards.js?v=1"></script>
-  <script src="js/main.js?v=1"></script>
+  <script src="cards/live.js"></script><!-- my real works and their numbers; written daily by tools/sync_data.py; ok if missing -->
+  <script src="cards/1 cs/cards.js?v=10"></script>
+  <script src="cards/2 art/cards.js?v=7"></script>
+  <script src="cards/3 videos/cards.js?v=6"></script>
+  <script src="js/main.js?v=11"></script><!-- loads js/objects.js (the 3D tile objects) once the page is up -->
+  <script src="js/field.js?v=1"></script>
+  <script src="js/look.js?v=1"></script>
 </body>
 </html>

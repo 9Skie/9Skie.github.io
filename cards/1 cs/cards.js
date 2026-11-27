@@ -1,32 +1,89 @@
 /* =========================================================================
    CS stream  —  code projects (source: GitHub)
    -------------------------------------------------------------------------
-   Add a card with card({ ... }). Drop cover images/gifs in ./images/ and
-   point to them as cover: "cards/1 cs/images/<file>".
+   The cards are my real public repositories, pulled once a day by
+   tools/sync_data.py (see cards/live.js). Forks are left out.
+
+   GitHub only knows when a repository was UPLOADED. Where that is not when
+   I made the thing, say so in `notes` below: take the // off the front of
+   its line and put in the real date. js/card.js lists everything a note
+   can say (made, archive, hide, title, desc, tags, cover).
+
+   For something that is not on GitHub at all, write a card by hand in
+   `items`. Cover images/gifs go in ./images/.
 
        card({
-         date:  "2025",
+         date:  "2025-03",
          title: "project name",
          desc:  "one line about it",
          tags:  ["js", "webgl"],
          cover: "cards/1 cs/images/my-project.gif",   // optional
-         url:   "https://github.com/9skie/repo",
-         // count: 1234   ← optional; auto-fetched later
-       })
+         url:   "https://example.com/project",
+         count: 0,                                    // optional
+       }),
    ========================================================================= */
 
-window.STREAMS.cs = {
+window.STREAMS.cs = liveStream("cs", {
   label: "CS",
   sub: "GitHub",
   kind: "stars",
-  aggregateLabel: "total GitHub stars across projects",
-  items: [
-    card({ date: "2025", title: "a cool project", desc: "a repo worth starring — mock data for now.", tags: ["js", "webgl"], url: "https://github.com/9skie", count: 1284 }),
-    card({ date: "2024", title: "another repo", desc: "something I built that people actually used.", tags: ["python"], url: "https://github.com/9skie", count: 412 }),
-    card({ date: "2024", title: "a tiny library", desc: "small, focused, does one thing well.", tags: ["ts", "lib"], url: "https://github.com/9skie", count: 96 }),
-    card({ date: "2023", title: "weekend hack", desc: "built in two days, surprisingly sturdy.", tags: ["go", "cli"], url: "https://github.com/9skie", count: 57 }),
-  ],
+  aggregateLabel: "total stars across repos",
+
+  // the total is shown as projects + courses. Course notes count, but get no cards here.
+  splitBy: "group",
+  parts: ["projects", "courses", "special"],
+  offPage: ["courses"],
+
+  // everything uploaded before the daily sync began sits below the OFF LIMITS line
+  archiveBefore: "2026-11-26",
+
+  notes: {
+    // the site itself and the index of my projects: no cards, but their stars count
+    "https://github.com/9Skie/My-Projects":     { noCard: "special" },
+    "https://github.com/9Skie/9Skie.github.io": { noCard: "special" },
+    // current projects: automatic cards above the OFF LIMITS line
+    "https://github.com/9Skie/EduVid":          { archive: false },
+    "https://github.com/9Skie/AttnAdam":        { archive: false },
+  },
+
+  // cards written by hand, for things that are not on GitHub
+  items: [],
+
+  // older projects, written by hand: they sit below the OFF LIMITS line.
+  // Everything here is fixed; only the number (views / likes / stars) comes
+  // in live every day, matched by the url.
   archive: [
-    card({ date: "~2022, maybe?", title: "old experiment", desc: "from the archive — dates get fuzzy past the line.", tags: ["c"], url: "#", count: 6 }),
+    card({
+      date:  "2024-02",
+      title: "StockNet",
+      desc:  "Neural network stock price predictor [EPQ project]",
+      tags:  ["jupyter notebook", "projects"],
+      cover: "",
+      url:   "https://github.com/9Skie/StockNet",
+    }),
+    card({
+      date:  "2022-11",
+      title: "Niko-Niko-Ni",
+      desc:  "A small Pygame runner that uses OneShot assets.",
+      tags:  ["python"],
+      cover: "",
+      url:   "https://github.com/9Skie/Niko-Niko-Ni",
+    }),
+    card({
+      date:  "2024-07",
+      title: "DebtCheck",
+      desc:  "BERT-style Transformer for credit card default prediction [AmEx Kaggle competition]",
+      tags:  ["jupyter notebook", "projects"],
+      cover: "",
+      url:   "https://github.com/9Skie/DebtCheck",
+    }),
+    card({
+      date:  "2025-04",
+      title: "SelfDrive",
+      desc:  "TD3 reinforcement learning agent for autonomous driving in the CARLA simulator",
+      tags:  ["python", "projects"],
+      cover: "",
+      url:   "https://github.com/9Skie/SelfDrive",
+    }),
   ],
-};
+});

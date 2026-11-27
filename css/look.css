@@ -1,0 +1,414 @@
+/* =========================================================================
+   look.css  —  the site's look, as settled on the test page
+   =========================================================================
+   These rules were tried one by one as switches on the test page
+   (lab.html, which stays on my computer) and then adopted together.
+   Each still hangs off a class on <html>, set once in index.html:
+
+     fx-type    a real type scale instead of 16px everywhere
+     fx-align   one left edge; panels and pictures end on the same line
+     fx-grid    pixel font only at exact multiples of its 8px grid
+     fx-calm    one cursor blinks at a time
+     fx-icons   pixel-drawn marks instead of symbols borrowed from fonts
+     fx-dither  the dither texture behind the content instead of over it
+     fx-marks   the star / heart / eye count icons, redrawn
+     fx-vignette  the edges of the screen fade toward ink (--vignette: 0.75)
+     fx-day     no night mode: always the light version, no toggle
+     fx-nocgi   the "CGI" row is taken out of What I Love
+     fx-beside  pictures stay beside their panels down to a 576px window
+     bg-depth   the background with depth (js/field.js) instead of the flat one
+     lab-fixes  bug fixes found on the test page
+
+   js/look.js makes the few page changes these rules need. Loaded after
+   css/style.css, so where both say something, this file wins.
+   ========================================================================= */
+
+/* ---- housekeeping for the small DOM changes js/look.js makes; invisible on their own ---- */
+.whoami__desc p + p { margin-top: 1.5em; }             /* the bio is split into two paragraphs */
+html.bg-depth #bg-blocks { visibility: hidden; }
+html:not(.bg-depth) #depth-field { visibility: hidden; }
+
+/* pictures stay square. A picture's box stretches to the height of the panel
+   beside it; the bigger text and padding below make those panels taller than
+   the picture is wide, which squashed it into a tall rectangle. With these
+   switches on, the box keeps its own shape and sits at the top instead. */
+html.fx-type .slot,
+html.fx-align .slot { align-items: flex-start; }
+
+/* …and so the panel beside a picture has to fit inside the picture's height,
+   or it would stick out below it. The What I Love rows spread out evenly to
+   fill that height (they never get closer than the site's own 4px), so the
+   panel ends on the picture's bottom line with six rows or with seven. */
+html.fx-type .feed__list,
+html.fx-align .feed__list { flex: 1 1 auto; align-content: space-between; }
+
+/* =========================================================================
+   fx-type — type sizes
+   12px for labels (caps, spaced), 14px for secondary text, 16px for
+   reading, 20px for the one sentence that matters. Headings unchanged.
+   ========================================================================= */
+html.fx-type .hud { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; padding: 6px 24px; }
+html.fx-type .hero__tag { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; padding: 6px 16px; }
+
+html.fx-type .whoami__desc { line-height: 1.7; }
+html.fx-type .whoami__desc .lead { font-size: 20px; line-height: 1.5; color: var(--ink); }
+html.fx-type .whoami__desc p + p { font-size: 14px; margin-top: 16px; }
+
+html.fx-type .feed__list { column-gap: 24px; align-items: baseline; }
+html.fx-type .feed__list dt { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; }
+
+html.fx-type .tile__sub,
+html.fx-type .aggregate__label,
+html.fx-type .card__count-label { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; }
+html.fx-type .tile.is-active .tile__sub { color: var(--ink-dim); }   /* the selected tile is a darker grey: pale grey 12px text was barely readable on it */
+
+html.fx-type .searchbar input,
+html.fx-type .searchbar__prompt { font-size: 14px; }
+html.fx-type .entry__date { font-size: 12px; letter-spacing: 1px; }
+html.fx-type .entry__dash { margin: 0 4px; }
+html.fx-type .card__tag { font-size: 12px; letter-spacing: .5px; padding: 2px 8px; }
+html.fx-type .card__src { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; --src-size: 12px; }
+html.fx-type .card__desc { font-size: 14px; line-height: 1.6; }
+html.fx-type .offlimits__band span { font-size: 12px; letter-spacing: 6px; }
+html.fx-type .offlimits__note { font-size: 14px; line-height: 1.6; }                       /* a sentence to read: secondary text size */
+html.fx-type .aggregate__parts small { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; }
+html.fx-type .deck__empty { font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; }   /* "nothing published here yet": a label, like the others */
+
+@media (max-width: 720px) {
+  html.fx-type .hud { padding: 6px 16px; }
+  html.fx-type .whoami__desc .lead { font-size: 18px; }
+  html.fx-type .feed__list { row-gap: 8px; }                /* stacked under the picture: nothing to fill, so a fixed gap */
+}
+
+/* =========================================================================
+   fx-align — one left edge
+   Text stops being centred inside boxes; everything hangs from the same
+   left line as the section labels.
+   Spacing is kept close: sections sit 64px apart (the site uses 56), and
+   the gaps inside a section are the site's own — between cards, around
+   them and inside them too. An earlier version of this switch spread
+   everything out much further; that was pulled back in.
+   Both panels are padded so their text fits inside the height of the
+   picture beside them (224px) — so panel and picture end on the same line.
+
+   The left line: text sits 32px in from the edge of its panel (16px on a
+   phone). In Things I've Done the star and the big number, the ">_" of the
+   filter box and the timeline's rail all stand on that same line.
+   ========================================================================= */
+html.fx-align .page { gap: 64px; padding-bottom: 96px; }   /* 96 = one section gap left showing above the bottom bar */
+html.fx-align .whoami__desc { text-align: left; padding: 24px 32px; }
+html.fx-align .feed { padding: 14px 32px; }
+html.fx-align .feed__list { text-align: left; grid-template-columns: max-content 1fr; }
+
+html.fx-align .aggregate {
+  display: grid; grid-template-columns: auto 1fr; grid-template-areas: "glyph label" "num num";
+  justify-items: start; align-items: center; gap: 12px;
+  padding: 24px 32px; text-align: left;
+}
+html.fx-align .aggregate__glyph { grid-area: glyph; display: flex; }
+html.fx-align .aggregate__label { grid-area: label; }
+html.fx-align .aggregate__num   { grid-area: num; }
+html.fx-align .aggregate__row   { grid-area: num; justify-content: flex-start; }   /* the number and its "= 1 + 3" */
+
+html.fx-align .searchbar { padding: 0 32px; }
+html.fx-align .deck { padding: 16px; }                     /* the site's 16px, on the left too (site: 8): rail = 1 + 16 + 16 = on the line */
+html.fx-align .offlimits { margin: 0 -16px; }              /* the band still reaches the sheet's edges */
+html.fx-align .offlimits__note { text-align: left; }       /* starts on the left line, like the timeline's rail below it */
+html.fx-align .deck__empty { text-align: left; padding: 8px 16px; }   /* an empty stream's one line starts on the same left line */
+
+@media (max-width: 720px) {
+  html.fx-align .page { gap: 48px; padding-bottom: 80px; }
+  html.fx-align .slot__box { margin: 0; }                    /* pictures hang from the left edge too */
+  html.fx-align .whoami__desc { padding: 16px; }
+  html.fx-align .feed { padding: 16px; }
+  html.fx-align .tile { justify-content: flex-start; text-align: left; }
+  html.fx-align .aggregate { padding: 20px 16px; }
+  html.fx-align .searchbar { padding: 0 16px; }
+  html.fx-align .deck { padding: 16px 8px 16px 0; }          /* the site's own phone values: rail = 1 + 0 + 16 */
+  html.fx-align .offlimits { margin: 0 -8px 0 0; }
+}
+
+/* =========================================================================
+   the two sections that hold a picture beside a panel report their own width
+   The rules below need to ask "is there room here for the full layout?".
+   A window's width is the wrong thing to ask about: on Windows it includes
+   a scrollbar the layout cannot use. So Who Am I and What I Love are made
+   "containers": @container (…) and the unit cqw then go by the width those
+   sections really have. Nothing visible changes from this line alone.
+   ========================================================================= */
+html.fx-type #who,   html.fx-type #love,
+html.fx-align #who,  html.fx-align #love,
+html.fx-beside #who, html.fx-beside #love { container-type: inline-size; }
+
+/* =========================================================================
+   fx-type / fx-align — windows narrower than the full layout
+   The full layout is 816px wide. On a window too narrow for it but wider
+   than a phone (a tablet held upright, a narrow browser window) the panel
+   gets narrower, its text wraps onto more lines, and it would grow taller
+   than the square picture beside it again.
+   So there the picture-and-panel pair shrinks as one piece instead:
+   picture, padding and text all by the same amount. The text wraps exactly
+   as it does at full width, and the pair still ends on one line.
+   --u is "one pixel of the full-width layout" at the width the section has
+   now (100cqw). Each line below is the same rule as further up or in
+   css/style.css, with its px counted in --u — if a size changes there,
+   change it here too.
+   ========================================================================= */
+@media (min-width: 721px) {
+  @container (max-width: 815.9px) {
+    html.fx-type .middle,
+    html.fx-align .middle {
+      --u: calc(100cqw / 816);
+      grid-template-columns: calc(224 * var(--u)) 1fr; gap: calc(24 * var(--u));
+    }
+    html.fx-type .middle--mirror,
+    html.fx-align .middle--mirror { grid-template-columns: 1fr calc(224 * var(--u)); }
+
+    html.fx-type .whoami__desc,
+    html.fx-align .whoami__desc { padding: calc(16 * var(--u)); font-size: calc(16 * var(--u)); }
+    html.fx-type .feed,
+    html.fx-align .feed { padding: calc(8 * var(--u)) calc(16 * var(--u)); }
+    html.fx-type .feed__list,
+    html.fx-align .feed__list { font-size: calc(16 * var(--u)); gap: calc(4 * var(--u)) calc(16 * var(--u)); }
+
+    html.fx-type .whoami__desc .lead { font-size: calc(20 * var(--u)); }
+    html.fx-type .whoami__desc p + p { font-size: calc(14 * var(--u)); margin-top: calc(16 * var(--u)); }
+    html.fx-type .feed__list { column-gap: calc(24 * var(--u)); }
+
+    html.fx-align .whoami__desc { padding: calc(24 * var(--u)) calc(32 * var(--u)); }
+    html.fx-align .feed { padding: calc(14 * var(--u)) calc(32 * var(--u)); }
+  }
+}
+
+/* =========================================================================
+   fx-beside — pictures stay beside their panels on narrower windows
+   The site stacks them (picture on top, panel underneath) as soon as the
+   window is under 720px wide. But a window of 580 to 720px — the app's side
+   pane, a small tablet, a phone held sideways — still has room for both,
+   and stacked there the picture sits alone with empty space beside it.
+   With this switch they stay side by side while the section is at least
+   544px wide (a 576px window). Narrower than that, on an upright phone,
+   they stack as before.
+   The picture keeps its full 224px. What gives is the text: one size
+   smaller (16px for the first sentence, 13px for the rest) and tighter
+   padding, chosen so both panels still fit inside the picture's height at
+   the narrowest width this applies to. Wider than that the text only gets
+   more room, so it fits there too.
+   If the description or the What I Love list gets longer, this is the place
+   to re-check: both panels at a 576px window.
+   ========================================================================= */
+@media (max-width: 720px) {
+  @container (min-width: 544px) {
+    html.fx-beside .middle { grid-template-columns: 224px minmax(0, 1fr); gap: 16px; }
+    html.fx-beside .middle--mirror { grid-template-columns: minmax(0, 1fr) 224px; }
+    html.fx-beside .middle--mirror .slot { order: 0; }              /* the photo goes back to the right of its text */
+    html.fx-beside .slot { align-items: flex-start; }               /* pictures stay square */
+    html.fx-beside .slot__box { max-width: none; margin: 0; }
+
+    html.fx-beside .whoami__desc { padding: 16px; font-size: 13px; }
+    html.fx-beside .whoami__desc .lead { font-size: 16px; }
+    html.fx-beside .whoami__desc p + p { font-size: 13px; margin-top: 12px; }
+
+    html.fx-beside .feed { padding: 10px 16px; }
+    html.fx-beside .feed__list { flex: 1 1 auto; align-content: space-between; gap: 2px 12px; font-size: 13px; line-height: 1.4; }
+    html.fx-beside .feed__list dt { font-size: 11px; letter-spacing: 1px; }
+  }
+}
+
+/* =========================================================================
+   fx-grid — pixel font on its grid
+   Silkscreen is drawn on an 8px grid. At in-between sizes (9.2vw, 71px…)
+   its steps land between screen pixels and come out uneven. Here it is
+   only ever a multiple of 8, and its letter-spacing stays on the grid.
+   ========================================================================= */
+html.fx-grid .title { font-size: 64px; letter-spacing: 0; }
+@media (min-width: 900px)  { html.fx-grid .title { font-size: 88px; } }
+@media (min-width: 1100px) { html.fx-grid .title { font-size: 104px; } }
+@media (min-width: 1400px) { html.fx-grid .title { font-size: 128px; } }
+@media (max-width: 720px)  { html.fx-grid .title { font-size: 56px; } }
+@media (max-width: 720px) and (min-width: 360px) { html.fx-grid .title { font-size: 64px; } }
+@media (max-width: 720px) and (min-width: 440px) { html.fx-grid .title { font-size: 72px; } }
+@media (max-width: 720px) and (min-width: 520px) { html.fx-grid .title { font-size: 88px; } }
+@media (max-width: 720px) and (min-width: 640px) { html.fx-grid .title { font-size: 104px; } }
+
+html.fx-grid .head,
+html.fx-grid .tile__lbl,
+html.fx-grid .entry__title,
+html.fx-grid .hero__cue,
+html.fx-grid .card__count-num { letter-spacing: 0; }
+html.fx-grid .aggregate__num { font-size: 64px; letter-spacing: 0; }
+@media (max-width: 720px) {
+  html.fx-grid .head { font-size: 16px; }
+  html.fx-grid .aggregate__num { font-size: 48px; }
+}
+
+/* =========================================================================
+   fx-calm — one blinking cursor
+   Six cursors blink in step on the site. Here only the section you are
+   reading blinks; the others hold still (js/look.js marks it with .is-live).
+   ========================================================================= */
+html.fx-calm .cursor { animation: none; opacity: 0; }
+html.fx-calm .title .cursor,
+html.fx-calm .hud .cursor,
+html.fx-calm .offlimits .cursor { opacity: 1; }
+html.fx-calm .is-live .cursor { animation: blink 1.1s steps(1) infinite; opacity: 1; }
+
+/* =========================================================================
+   fx-icons — pixel-drawn symbols
+   ▌ ● ○ ▒ ▼ ↑ ↗ come out of whatever font each device has, so they differ
+   in weight and size. Here each one is drawn on the same pixel grid as the
+   star / heart / eye icons the site already has.
+   ========================================================================= */
+/* (these still hold their old character at font-size 0, so they are centred
+   on the text with vertical-align: middle rather than sat on the baseline) */
+html.fx-icons .g-bar {                              /* ▌ in the HUD */
+  display: inline-block; width: 4px; height: 12px; margin-right: 8px;
+  vertical-align: middle; position: relative; top: -1px;
+  background: currentColor; font-size: 0;
+}
+html.fx-icons .dot {                                /* ● LINK */
+  display: inline-block; width: 6px; height: 6px; margin-right: 6px;
+  vertical-align: middle; position: relative; top: -1px;
+  background: currentColor; font-size: 0;
+}
+html.fx-icons #hud-dots { display: none; }          /* ● ○ ○ -> three pips */
+html.fx-icons #hud-pips { display: flex; gap: 8px; align-items: center; }
+.pip { width: 8px; height: 8px; border: 2px solid currentColor; }
+.pip.is-on { background: currentColor; }
+
+html.fx-icons .feed__list dt::before {              /* ▒ -> a real dither swatch */
+  content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 10px;
+  background: repeating-conic-gradient(var(--line-3) 0% 25%, transparent 0% 50%) 0 0 / 4px 4px;
+}
+
+html.fx-icons .hero__arrow,                         /* ▼ */
+html.fx-icons .ctrl-btn::before,                    /* ↑ */
+html.fx-icons .card__src::after {                   /* ↗ */
+  content: ""; display: inline-block; background: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat;
+}
+html.fx-icons .hero__arrow {
+  font-size: 0; width: 14px; height: 8px; margin-right: 8px; vertical-align: middle; position: relative; top: -1px;
+  --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 4' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h7v1H0zM1 1h5v1H1zM2 2h3v1H2zM3 3h1v1H3z'/%3E%3C/svg%3E");
+}
+html.fx-icons .ctrl-btn { font-size: 0; display: inline-flex; align-items: center; justify-content: center; }
+html.fx-icons .ctrl-btn::before {
+  width: 14px; height: 14px;
+  --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpath d='M3 0h1v1H3zM2 1h3v1H2zM1 2h5v1H1zM0 3h7v1H0zM3 4h1v3H3z'/%3E%3C/svg%3E");
+}
+html.fx-icons .card__src { font-size: 0; letter-spacing: 0; display: inline-flex; align-items: center; gap: 8px; }
+html.fx-icons .card__src::before { content: "view"; font-size: var(--src-size, 16px); letter-spacing: .5px; }
+html.fx-icons.fx-type .card__src::before { letter-spacing: 1.5px; }
+html.fx-icons .card__src::after {
+  width: 10px; height: 10px;
+  --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpath d='M2 0h5v1H2zM6 1h1v4H6zM5 1h1v1H5zM4 2h1v1H4zM3 3h1v1H3zM2 4h1v1H2zM1 5h1v1H1zM0 6h1v1H0z'/%3E%3C/svg%3E");
+}
+
+/* =========================================================================
+   fx-dither — texture behind the content
+   The dither pattern currently lies over everything, text and pictures
+   included. Here it sits on the background only.
+   ========================================================================= */
+html.fx-dither body::after { z-index: 0; }
+
+/* =========================================================================
+   fx-marks — the count icons, redrawn
+   Star, heart and eye drawn solid: the heart has a shine, the eye an iris
+   ring and a glint. Heart and eye sit on a grid of 2px cells (3px when the
+   icon is centred above the big number). js/look.js sets data-kind on <html>
+   to say which one the selected stream uses.
+
+   The star is drawn twice as fine: one px a step, 25x24. A five-point star
+   needs that. On 2px cells its slanted edges come out as a few big uneven
+   steps (a pinched waist, stick arms, boots for feet), and two stars at
+   that size were both called ugly. This one was picked from a row of
+   candidates ("S2"): the sturdy kind, a broad body with short points.
+   Where the icon is centred above the number it has its own 37x36 drawing,
+   so it is never the small one stretched by one and a half.
+   Both drawings are kept as readable rows in lab/star.py, which prints the
+   two url("…") values below; to change the shape, change a row there.
+   ========================================================================= */
+html[data-kind="stars"] {
+  --mark-w: 12.5; --mark-h: 12;      /* x 2px a cell = 25 x 24px: one px for each step of the drawing */
+  --mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 25 24' shape-rendering='crispEdges'%3E%3Cpath d='M12 0h1v2H12zM11 2h3v3H11zM10 5h5v2H10zM9 7h7v2H9zM0 9h25v1H0zM1 10h23v1H1zM2 11h21v1H2zM4 12h17v1H4zM5 13h15v1H5zM6 14h13v4H6zM5 18h15v1H5zM5 19h7v1H5zM13 19h7v1H13zM5 20h5v1H5zM15 20h5v1H15zM4 21h5v1H4zM16 21h5v1H16zM4 22h3v1H4zM18 22h3v1H18zM4 23h2v1H4zM19 23h2v1H19z'/%3E%3C/svg%3E");
+  --mark-big: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 37 36' shape-rendering='crispEdges'%3E%3Cpath d='M18 0h1v2H18zM17 2h3v3H17zM16 5h5v2H16zM15 7h7v2H15zM14 9h9v2H14zM13 11h11v2H13zM0 13h37v1H0zM1 14h35v1H1zM2 15h33v1H2zM3 16h31v1H3zM5 17h27v1H5zM6 18h25v1H6zM7 19h23v1H7zM8 20h21v1H8zM9 21h19v3H9zM8 24h21v4H8zM7 28h11v1H7zM19 28h11v1H19zM7 29h10v1H7zM20 29h10v1H20zM7 30h8v1H7zM22 30h8v1H22zM7 31h6v1H7zM24 31h6v1H24zM6 32h6v1H6zM25 32h6v1H25zM6 33h4v1H6zM27 33h4v1H27zM6 34h3v1H6zM28 34h3v1H28zM6 35h2v1H6zM29 35h2v1H29z'/%3E%3C/svg%3E");
+}
+html[data-kind="likes"] {
+  --mark-w: 11; --mark-h: 10;
+  --mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 10' shape-rendering='crispEdges'%3E%3Cpath d='M1 0h3v1H1zM7 0h3v1H7zM0 1h5v1H0zM6 1h5v1H6zM0 2h2v2H0zM3 2h8v2H3zM0 4h11v1H0zM1 5h9v1H1zM2 6h7v1H2zM3 7h5v1H3zM4 8h3v1H4zM5 9h1v1H5z'/%3E%3C/svg%3E");
+}
+html[data-kind="views"] {
+  --mark-w: 15; --mark-h: 9;
+  --mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 15 9' shape-rendering='crispEdges'%3E%3Cpath d='M5 0h5v1H5zM3 1h9v1H3zM2 2h4v1H2zM9 2h4v1H9zM1 3h4v1H1zM7 3h2v1H7zM10 3h4v1h-4zM0 4h5v1H0zM6 4h3v1H6zM10 4h5v1h-5zM1 5h4v1H1zM6 5h3v1H6zM10 5h4v1h-4zM2 6h4v1H2zM9 6h4v1H9zM3 7h9v1H3zM5 8h5v1H5z'/%3E%3C/svg%3E");
+}
+html.fx-marks .aggregate__glyph svg,
+html.fx-marks .card__count-glyph svg { display: none; }
+html.fx-marks .aggregate__glyph,
+html.fx-marks .card__count-glyph { display: flex; --cell: 2px; }
+html.fx-marks .aggregate__glyph::before,
+html.fx-marks .card__count-glyph::before {
+  content: ""; display: block;
+  width: calc(var(--mark-w, 11) * var(--cell)); height: calc(var(--mark-h, 11) * var(--cell));
+  background: currentColor;
+  -webkit-mask: var(--mark) center / 100% 100% no-repeat; mask: var(--mark) center / 100% 100% no-repeat;
+}
+html.fx-marks:not(.fx-align) .aggregate__glyph { --cell: 3px; }   /* centred above the number: room to be bigger */
+html.fx-marks:not(.fx-align)[data-kind="stars"] .aggregate__glyph { --mark: var(--mark-big); }                     /* …where the star uses its bigger drawing, */
+html.fx-marks:not(.fx-align)[data-kind="stars"] .aggregate__glyph::before { width: 37px; height: 36px; }          /* at exactly one px a step */
+/* the three marks are different heights (star 12 cells, heart 10, eye 9). Beside the big
+   number each gets the same 12-cell-tall slot, so the panel is the same height for every
+   stream and nothing below it shifts when you switch between CS, ART and VIDEO. */
+html.fx-marks .aggregate__glyph { min-height: calc(12 * var(--cell)); align-items: center; }
+
+/* =========================================================================
+   fx-vignette — a vignette
+   The screen fades toward the ink colour as it nears its edges, strongest
+   in the corners. Ink is dark by day and light by night, so the edges get
+   darker in day mode and lighter in night mode with no extra rule.
+   It lies over the background (blocks, bars) but BEHIND everything in the
+   page: panels, pictures, tiles, labels and the title stay untouched.
+   That is why it hangs off .page with a negative z-index: it paints at the
+   bottom of the page's own layer, above whatever is behind the page.
+   --vignette is its strength: 0 = none, 1 = full. At full strength the
+   corners are about 80% ink and the middle of each side about 37%.
+   ========================================================================= */
+html.fx-vignette .page::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse farthest-corner at 50% 50%, transparent 45%, var(--ink) 115%);
+  opacity: var(--vignette, 0.75);
+}
+
+/* =========================================================================
+   fx-day — no night mode
+   The page is always the light version. js/look.js keeps the "night" class off
+   <html>; this hides the moon / sun toggle so only the clock is left in the
+   top bar's right-hand corner.
+   To adopt it for real: delete the html.night block in css/style.css, the
+   toggle button and the first <script> in index.html, and the night part of
+   startClock() in js/main.js.
+   ========================================================================= */
+html.fx-day .hud__toggle { display: none; }
+
+/* =========================================================================
+   fx-nocgi — the CGI row is gone from What I Love
+   js/look.js marks that row's two cells with .row-cgi.
+   To adopt it for real: delete the ["CGI", "countless works"] line from
+   ROOTS in js/data.js.
+   ========================================================================= */
+html.fx-nocgi .row-cgi { display: none; }
+
+/* =========================================================================
+   lab-fixes — bugs on the site, fixed here
+   Not design ideas, so not switches: they are on whenever TEST is showing.
+   CURRENT shows the site exactly as it is, bugs included.
+   ========================================================================= */
+/* Archive cards (below OFF LIMITS) are meant to be dimmed. The site's
+   entrance animation ends by setting every card to full strength and holds
+   it there. So the archive is dimmed the first time you see a stream, and
+   no longer dimmed after you switch to another stream and come back.
+   This copy of the animation has no last frame: it ends on each card's own
+   look, dimmed or not.
+   To adopt it for real: delete the "100% { … }" part of @keyframes entry-in
+   in css/style.css. */
+@keyframes entry-in-kept { 0% { opacity: 0; transform: translate(4px, 4px); } }
+html.lab-fixes .entry.is-entering { animation-name: entry-in-kept; }

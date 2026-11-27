@@ -18,7 +18,7 @@ const IDENTITY = {
   name: "9skie",   // shown in the intro "hi, I'm ___"
   handle: "9skie", // @handle in footer
   github: "9skie", // GitHub username — drives the LIVE CS stream
-  bio: "I’m interested in LLM infrastructure, anime art, and educational videos. \n\nFor a long time, I was in imitation of others' lives. It took time to understand who I truly am, but now I know where I’m going.",
+  bio: "I’m interested in three distinct directions: AI infrastructure, anime art, and educational videos.\n\nI’m trying to break out of student syndrome by converting theoretical knowledge into visible output.",
 };
 
 /* -------------------------------------------------------------------------

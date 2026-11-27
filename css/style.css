@@ -400,3 +400,9 @@ html.has-models .tile__ico { display: none; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* a video posted on both sites: one card, a link to each (js/card.js, pair) */
+.card__links { margin-left: auto; display: inline-flex; gap: 16px; }   /* on the right, like a single link */
+.card__links .card__src { margin-left: 0; }
+.card__meta:has(.card__links) { flex-wrap: wrap; row-gap: 12px; }        /* narrow card: the links take their own line, still on the right */
+html.fx-icons .card__src[data-label]::before { content: attr(data-label); }

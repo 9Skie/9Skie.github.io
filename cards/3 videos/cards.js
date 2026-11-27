@@ -38,6 +38,10 @@ window.STREAMS.video = liveStream("video", {
   splitBy: "source",
   parts: ["youtube", "bilibili"],
 
+  // the same video posted on both sites the same day is one card, with both
+  // view counts added and a link to each (js/card.js explains "pair")
+  pair: { sources: ["youtube", "bilibili"], hours: 24 },
+
   // everything uploaded before the daily sync began sits below the OFF LIMITS line
   archiveBefore: "2026-11-26",
 

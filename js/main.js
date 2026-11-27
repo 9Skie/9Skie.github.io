@@ -116,6 +116,10 @@
     const parts = stream.parts || [];
     const by = { ...(stream.offPageCounts || {}) };
     (stream.items || []).concat(stream.archive || []).forEach((it) => {
+      if (it.counts) {                                           // one card, two sites: each number to its own side
+        for (const [k, n] of Object.entries(it.counts)) by[k] = (by[k] || 0) + (n || 0);
+        return;
+      }
       const k = it.part || parts[0];
       by[k] = (by[k] || 0) + (it.count || 0);
     });
@@ -259,7 +263,9 @@
         </div>
         <div class="card__meta">
           <div class="card__tags">${tags}</div>
-          <a class="card__src" href="${esc(it.url || '#')}" target="_blank" rel="noopener">view ↗</a>
+          ${it.links && it.links.length > 1
+            ? `<span class="card__links">${it.links.map((l) => `<a class="card__src" data-label="${esc(l.label)}" href="${esc(l.url || '#')}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('')}</span>`
+            : `<a class="card__src" href="${esc(it.url || '#')}" target="_blank" rel="noopener">view ↗</a>`}
         </div>
         <p class="card__desc">${esc(it.desc || '')}</p>
       </article>`;

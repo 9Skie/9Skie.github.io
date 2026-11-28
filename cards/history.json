@@ -31,6 +31,22 @@
     "art": 8,
     "video": 8
    }
+  },
+  {
+   "date": "2026-11-28",
+   "stars": 4,
+   "views": 3519,
+   "likes": 43,
+   "github_stars": 4,
+   "youtube_views": 69,
+   "bilibili_views": 3450,
+   "pixiv_bookmarks": 43,
+   "bilibili_followers": 30,
+   "works": {
+    "cs": 17,
+    "art": 8,
+    "video": 8
+   }
   }
  ]
 }
